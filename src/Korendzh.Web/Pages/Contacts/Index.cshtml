@@ -37,12 +37,30 @@
                     <div class="label">Email</div>
                     <p><a href="mailto:@s.Email">@s.Email</a></p>
                 }
-                <div class="label">Социальные сети</div>
-                <p>
-                    @if (!string.IsNullOrEmpty(s.InstagramUrl)) { <a href="@s.InstagramUrl">Instagram</a> @:&nbsp; }
-                    @if (!string.IsNullOrEmpty(s.TelegramUrl)) { <a href="@s.TelegramUrl">Telegram</a> @:&nbsp; }
-                    @if (!string.IsNullOrEmpty(s.VkUrl)) { <a href="@s.VkUrl">ВКонтакте</a> }
-                </p>
+                @{
+                    var hasSocial =
+                        !string.IsNullOrEmpty(s.InstagramUrl) ||
+                        !string.IsNullOrEmpty(s.TelegramUrl) ||
+                        !string.IsNullOrEmpty(s.VkUrl);
+                }
+                @if (hasSocial)
+                {
+                    <div class="label">Социальные сети</div>
+                    <p class="socials">
+                        @if (!string.IsNullOrEmpty(s.InstagramUrl))
+                        {
+                            <a href="@s.InstagramUrl">Instagram</a>
+                        }
+                        @if (!string.IsNullOrEmpty(s.TelegramUrl))
+                        {
+                            <a href="@s.TelegramUrl">Telegram</a>
+                        }
+                        @if (!string.IsNullOrEmpty(s.VkUrl))
+                        {
+                            <a href="@s.VkUrl">ВКонтакте</a>
+                        }
+                    </p>
+                }
             </div>
         </div>
     </div>
