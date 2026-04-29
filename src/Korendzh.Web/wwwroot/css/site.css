@@ -3,13 +3,39 @@ body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; co
 a { color: #1d4ed8; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; background: #111827; color: #f9fafb; }
-.topbar .brand a { color: #f9fafb; font-weight: 600; font-size: 1.1rem; }
-.topbar .navmain { display: flex; gap: 1rem; align-items: center; }
-.topbar .navmain a, .topbar .navmain span.user { color: #d1d5db; }
+.topbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1.25rem;
+    background: #111827;
+    color: #f9fafb;
+}
+.topbar .brand { flex: 0 0 auto; }
+.topbar .brand a { color: #f9fafb; font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
+.topbar .navmain {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    align-items: center;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    font-size: 0.9rem;
+}
+.topbar .navmain a, .topbar .navmain span.user {
+    color: #d1d5db;
+    white-space: nowrap;
+}
 .topbar .navmain a:hover { color: #fff; text-decoration: none; }
-.topbar .navmain .user { opacity: 0.7; margin-left: 1rem; }
-.topbar .navmain button.linklike { background: none; border: 0; color: #d1d5db; cursor: pointer; padding: 0; font: inherit; }
+.topbar .navmain .user {
+    opacity: 0.7;
+    padding-left: 0.5rem;
+    border-left: 1px solid #374151;
+    margin-left: 0.25rem;
+}
+.topbar .navmain button.linklike { background: none; border: 0; color: #d1d5db; cursor: pointer; padding: 0; font: inherit; white-space: nowrap; }
 .topbar .navmain button.linklike:hover { color: #fff; }
 
 .container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }

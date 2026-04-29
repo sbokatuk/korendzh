@@ -1,10 +1,10 @@
 @page
 @model Korendzh.Web.Pages.Plan.WorkersModel
 @{
-    ViewData["Title"] = "Планы — список воркеров";
+    ViewData["Title"] = "Планы — список работников";
 }
 <div class="toolbar">
-    <h1>Планы воркеров</h1>
+    <h1>Планы работников</h1>
     <a class="btn" asp-page="/Plan/Bulk">Заполнить по шаблону</a>
 </div>
 
@@ -24,7 +24,7 @@
     }
     @if (!Model.Items.Any())
     {
-        <tr><td colspan="4" class="muted">Воркеров пока нет.</td></tr>
+        <tr><td colspan="4" class="muted">Работников пока нет.</td></tr>
     }
     </tbody>
 </table>

@@ -76,7 +76,7 @@ public class IndexModel : PageModel
     {
         "task" => "часы по задачам",
         "car" => "часы по автомобилям",
-        _ => "часы по воркерам"
+        _ => "часы по работникам"
     };
 
     private async Task<List<StatBucket>> BuildAsync(string by, Guid? divisionId)

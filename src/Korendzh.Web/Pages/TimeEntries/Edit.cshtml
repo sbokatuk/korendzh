@@ -60,23 +60,50 @@ else
 
 @section Scripts {
     <script>
-        const carsInput = document.querySelector('input[name="Input.CarName"]');
-        const datalist = document.getElementById('cars-datalist');
-        let lastQuery = '';
-        carsInput?.addEventListener('input', async (e) => {
-            const q = e.target.value.trim();
-            if (q.length < 2 || q === lastQuery) return;
-            lastQuery = q;
-            const resp = await fetch('/api/cars/autocomplete?q=' + encodeURIComponent(q));
-            if (!resp.ok) return;
-            const items = await resp.json();
-            datalist.innerHTML = '';
-            items.forEach(it => {
-                const opt = document.createElement('option');
-                opt.value = it.name;
-                opt.label = it.licensePlate ? (it.name + ' · ' + it.licensePlate) : it.name;
-                datalist.appendChild(opt);
+        (function () {
+            const carInput = document.querySelector('input[name="Input.CarName"]');
+            const plateInput = document.querySelector('input[name="Input.LicensePlate"]');
+            const datalist = document.getElementById('cars-datalist');
+            if (!carInput || !plateInput || !datalist) return;
+
+            const cache = new Map();
+            let lastSuggestedPlate = '';
+            let lastQuery = '';
+
+            async function fetchAndPopulate(q) {
+                const resp = await fetch('/api/cars/autocomplete?q=' + encodeURIComponent(q));
+                if (!resp.ok) return;
+                const items = await resp.json();
+                datalist.innerHTML = '';
+                items.forEach(it => {
+                    cache.set(it.name.toLowerCase(), it);
+                    const opt = document.createElement('option');
+                    opt.value = it.name;
+                    opt.label = it.licensePlate ? (it.name + ' · ' + it.licensePlate) : it.name;
+                    datalist.appendChild(opt);
+                });
+            }
+
+            function tryAutoFillPlate() {
+                const name = carInput.value.trim().toLowerCase();
+                const match = cache.get(name);
+                if (!match || !match.licensePlate) return;
+                if (plateInput.value === '' || plateInput.value === lastSuggestedPlate) {
+                    plateInput.value = match.licensePlate;
+                    lastSuggestedPlate = match.licensePlate;
+                }
+            }
+
+            carInput.addEventListener('input', async (e) => {
+                const q = e.target.value.trim();
+                if (q.length >= 2 && q !== lastQuery) {
+                    lastQuery = q;
+                    await fetchAndPopulate(q);
+                }
+                tryAutoFillPlate();
             });
-        });
+            carInput.addEventListener('change', tryAutoFillPlate);
+            carInput.addEventListener('blur', tryAutoFillPlate);
+        })();
     </script>
 }

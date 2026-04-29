@@ -18,11 +18,11 @@
             var isAdmin = User.IsInRole(Roles.Admin);
             var isManager = User.IsInRole(Roles.Manager);
 
-            <a asp-page="/TimeEntries/Index">Часы</a>
+            <a asp-page="/TimeEntries/Index">Табель</a>
             <a asp-page="/Plan/Index">Мой план</a>
             @if (isManager || isAdmin)
             {
-                <a asp-page="/Workers/Index">Воркеры</a>
+                <a asp-page="/Workers/Index">Работники</a>
                 <a asp-page="/Plan/Workers">Планы</a>
                 <a asp-page="/Cars/Index">Автомобили</a>
                 <a asp-page="/Statistics/Index">Статистика</a>

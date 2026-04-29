@@ -1,10 +1,10 @@
 @page
 @model Korendzh.Web.Pages.TimeEntries.IndexModel
 @{
-    ViewData["Title"] = "Рабочие часы";
+    ViewData["Title"] = "Табель";
 }
 <div class="toolbar">
-    <h1>Рабочие часы</h1>
+    <h1>Табель</h1>
     <a asp-page="/TimeEntries/Create" class="btn">+ Новая запись</a>
 </div>
 
@@ -21,7 +21,7 @@
         @if (Model.IsManagerOrAdmin)
         {
             <div class="field">
-                <label>Воркер</label>
+                <label>Работник</label>
                 <select name="workerId">
                     <option value="">— все —</option>
                     @foreach (var w in Model.Workers)
@@ -41,7 +41,7 @@
     <thead>
         <tr>
             <th>Дата</th>
-            <th>Воркер</th>
+            <th>Работник</th>
             <th>Часы</th>
             <th>Задача</th>
             <th>Авто</th>

@@ -8,7 +8,7 @@
     <div asp-validation-summary="ModelOnly" class="error"></div>
 
     <div class="field">
-        <label>Воркеры</label>
+        <label>Работники</label>
         @if (Model.AvailableWorkers.Count == 1 && !Model.IsManagerOrAdmin)
         {
             <input type="hidden" name="WorkerIds" value="@Model.AvailableWorkers[0].Id" />

@@ -70,7 +70,7 @@ public class BulkModel : PageModel
         }
         if (WorkerIds.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "Выберите хотя бы одного воркера.");
+            ModelState.AddModelError(string.Empty, "Выберите хотя бы одного работника.");
             return Page();
         }
 
@@ -94,7 +94,7 @@ public class BulkModel : PageModel
             return Page();
         }
 
-        TempData["StatusMessage"] = $"План применён для {WorkerIds.Count} воркер(ов) на {(Input.To.DayNumber - Input.From.DayNumber + 1)} дн.";
+        TempData["StatusMessage"] = $"План применён для {WorkerIds.Count} работник(ов) на {(Input.To.DayNumber - Input.From.DayNumber + 1)} дн.";
         // Если выбран один воркер — отправляем на его план; иначе обратно к списку.
         if (WorkerIds.Count == 1)
             return RedirectToPage("Index", new { workerId = WorkerIds[0] });
