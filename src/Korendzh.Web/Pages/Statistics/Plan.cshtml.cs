@@ -28,14 +28,15 @@ public class PlanModel : PageModel
     [BindProperty(SupportsGet = true)] public DateOnly To { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     [BindProperty(SupportsGet = true)] public Guid? DivisionId { get; set; }
     [BindProperty(SupportsGet = true)] public Guid? WorkerId { get; set; }
+    [BindProperty(SupportsGet = true)] public PlanGranularity Granularity { get; set; } = PlanGranularity.Day;
 
-    public List<PlanVsActualDay> Days { get; private set; } = new();
+    public List<PlanBucket> Buckets { get; private set; } = new();
     public List<Domain.Division> Divisions { get; private set; } = new();
     public List<AppUser> WorkerOptions { get; private set; } = new();
     public bool IsAdmin { get; private set; }
 
-    public decimal TotalPlanned => Days.Sum(d => d.PlannedHours);
-    public decimal TotalActual => Days.Sum(d => d.ActualHours);
+    public decimal TotalPlanned => Buckets.Sum(b => b.PlannedHours);
+    public decimal TotalActual => Buckets.Sum(b => b.ActualHours);
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -55,7 +56,9 @@ public class PlanModel : PageModel
             if (!IsAdmin && worker.DivisionId != actor.DivisionId) return Forbid();
         }
 
-        Days = await _plan.GetPlanVsActualAsync(effectiveDivision, WorkerId, From, To);
+        // Сначала суточные данные, потом — группировка по выбранной гранулярности.
+        var daily = await _plan.GetPlanVsActualAsync(effectiveDivision, WorkerId, From, To);
+        Buckets = daily.GroupByGranularity(Granularity, anchor: From);
 
         if (IsAdmin)
         {

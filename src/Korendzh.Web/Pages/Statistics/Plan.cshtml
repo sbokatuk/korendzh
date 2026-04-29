@@ -1,4 +1,5 @@
 @page
+@using Korendzh.Infrastructure.Plan
 @model Korendzh.Web.Pages.Statistics.PlanModel
 @{
     ViewData["Title"] = "План vs Факт";
@@ -14,6 +15,15 @@
         <div class="field">
             <label>До</label>
             <input type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field">
+            <label>Гранулярность</label>
+            <select name="granularity">
+                @foreach (var g in (PlanGranularity[])Enum.GetValues(typeof(PlanGranularity)))
+                {
+                    <option value="@g" selected="@(Model.Granularity == g)">@g.Label()</option>
+                }
+            </select>
         </div>
         @if (Model.IsAdmin)
         {
@@ -64,9 +74,9 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script>
-        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Days.Select(d => d.Date.ToString("yyyy-MM-dd"))));
-        const planned = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Days.Select(d => (double)d.PlannedHours)));
-        const actual  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Days.Select(d => (double)d.ActualHours)));
+        const labels  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Buckets.Select(b => b.Label)));
+        const planned = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Buckets.Select(b => (double)b.PlannedHours)));
+        const actual  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Buckets.Select(b => (double)b.ActualHours)));
 
         new Chart(document.getElementById('planChart').getContext('2d'), {
             type: 'line',
