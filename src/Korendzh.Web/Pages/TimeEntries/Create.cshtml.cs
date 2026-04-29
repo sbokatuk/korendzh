@@ -82,10 +82,7 @@ public class CreateModel : PageModel
             return Forbid();
         }
 
-        if (Input.WorkDate > DateOnly.FromDateTime(DateTime.Today))
-        {
-            ModelState.AddModelError(nameof(Input.WorkDate), "Дата не может быть в будущем.");
-        }
+        // Дата работы: не ограничиваем будущим — план/факт может оформляться авансом.
 
         // Если CarName заполнено, либо LicensePlate тоже должен быть (см. validation.md).
         if (!string.IsNullOrWhiteSpace(Input.CarName) ^ !string.IsNullOrWhiteSpace(Input.LicensePlate))

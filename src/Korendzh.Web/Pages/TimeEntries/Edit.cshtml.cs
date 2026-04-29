@@ -101,10 +101,7 @@ public class EditModel : PageModel
         }
         if (!await _scope.CanAccessTimeEntryAsync(actor, entry.WorkerId)) return Forbid();
 
-        if (Input.WorkDate > DateOnly.FromDateTime(DateTime.Today))
-        {
-            ModelState.AddModelError(nameof(Input.WorkDate), "Дата не может быть в будущем.");
-        }
+        // Дата работы не ограничена будущим — табель может оформляться авансом.
         if (!string.IsNullOrWhiteSpace(Input.CarName) ^ !string.IsNullOrWhiteSpace(Input.LicensePlate))
         {
             ModelState.AddModelError(string.Empty, "Заполните оба поля автомобиля или оставьте оба пустыми.");

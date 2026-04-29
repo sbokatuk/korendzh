@@ -98,8 +98,7 @@ public class TimeEntriesApiController : ControllerBase
         if (actor is null) return Unauthorized();
 
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        if (req.WorkDate > DateOnly.FromDateTime(DateTime.Today))
-            return BadRequest(new { error = "work_date_in_future" });
+        // Дата работы не ограничена будущим — табель может оформляться авансом.
         if (!string.IsNullOrWhiteSpace(req.CarName) ^ !string.IsNullOrWhiteSpace(req.LicensePlate))
             return BadRequest(new { error = "car_fields_inconsistent" });
 

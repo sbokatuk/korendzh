@@ -170,22 +170,24 @@ public class PlanService : IPlanService
         DateOnly to,
         CancellationToken ct = default)
     {
-        // Список воркеров для агрегата.
-        IQueryable<Guid> workerIdsQ;
+        // Список работников для агрегата.
+        // Важно: если workerId задан, формируем список синхронно (in-memory IQueryable не работает с ToListAsync).
+        List<Guid> workerIds;
         if (workerId.HasValue)
         {
-            workerIdsQ = new[] { workerId.Value }.AsQueryable();
+            workerIds = new List<Guid> { workerId.Value };
         }
         else if (divisionId.HasValue)
         {
-            workerIdsQ = _db.Users.Where(u => u.DivisionId == divisionId).Select(u => u.Id);
+            workerIds = await _db.Users
+                .Where(u => u.DivisionId == divisionId)
+                .Select(u => u.Id)
+                .ToListAsync(ct);
         }
         else
         {
-            workerIdsQ = _db.Users.Select(u => u.Id);
+            workerIds = await _db.Users.Select(u => u.Id).ToListAsync(ct);
         }
-
-        var workerIds = await workerIdsQ.ToListAsync(ct);
 
         var planByDate = await _db.PlanEntries
             .Where(p => workerIds.Contains(p.WorkerId) && p.WorkDate >= from && p.WorkDate <= to)

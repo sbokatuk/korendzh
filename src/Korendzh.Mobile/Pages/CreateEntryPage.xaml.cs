@@ -12,7 +12,7 @@ public partial class CreateEntryPage : ContentPage
         InitializeComponent();
         _api = api;
         DatePicker.Date = DateTime.Today;
-        DatePicker.MaximumDate = DateTime.Today;
+        // MaximumDate не задаём — табель можно оформлять и на будущие даты.
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
