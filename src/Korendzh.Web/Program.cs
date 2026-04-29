@@ -187,6 +187,23 @@ using (var scope = app.Services.CreateScope())
 
     var seeder = sp.GetRequiredService<DataSeeder>();
     await seeder.RunAsync();
+
+    // Стартовая проверка SMTP-конфигурации.
+    var emailOpt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Korendzh.Infrastructure.Notifications.EmailOptions>>().Value;
+    if (string.IsNullOrWhiteSpace(emailOpt.Host) ||
+        string.Equals(emailOpt.Host, "smtp.example.com", StringComparison.OrdinalIgnoreCase))
+    {
+        startupLogger.LogWarning(
+            "SMTP не настроен (Email:Host='{Host}'). Все попытки отправки писем (инвайты, сброс паролей) будут падать. " +
+            "Заполните Email:* в appsettings.Local.json или переменных окружения.",
+            emailOpt.Host);
+    }
+    else
+    {
+        startupLogger.LogInformation(
+            "SMTP configured: host={Host}:{Port}, useStartTls={Tls}, fromAddress={From}, hasUser={HasUser}",
+            emailOpt.Host, emailOpt.Port, emailOpt.UseStartTls, emailOpt.FromAddress, !string.IsNullOrEmpty(emailOpt.User));
+    }
 }
 
 app.Run();

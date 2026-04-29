@@ -3,6 +3,7 @@ using System.Text.Json;
 using Korendzh.Domain;
 using Korendzh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Korendzh.Infrastructure.Notifications;
 
@@ -18,10 +19,12 @@ public class NotificationDispatcher : INotificationDispatcher
     };
 
     private readonly AppDbContext _db;
+    private readonly ILogger<NotificationDispatcher> _log;
 
-    public NotificationDispatcher(AppDbContext db)
+    public NotificationDispatcher(AppDbContext db, ILogger<NotificationDispatcher> log)
     {
         _db = db;
+        _log = log;
     }
 
     public async Task EnqueueAsync(
@@ -36,7 +39,13 @@ public class NotificationDispatcher : INotificationDispatcher
             .AsNoTracking()
             .AnyAsync(x => x.EventKey == eventKey, ct);
 
-        if (existing) return;
+        if (existing)
+        {
+            _log.LogInformation(
+                "Notification already queued (idempotent skip): eventKey={EventKey}, userId={UserId}, channel={Channel}, template={Template}",
+                eventKey, userId, channel, templateTag);
+            return;
+        }
 
         var entry = new NotificationLogEntry
         {
@@ -51,5 +60,9 @@ public class NotificationDispatcher : INotificationDispatcher
 
         _db.Notifications.Add(entry);
         await _db.SaveChangesAsync(ct);
+
+        _log.LogInformation(
+            "Notification ENQUEUED: id={Id}, userId={UserId}, channel={Channel}, template={Template}, eventKey={EventKey}",
+            entry.Id, userId, channel, templateTag, eventKey);
     }
 }

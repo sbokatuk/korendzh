@@ -1,0 +1,59 @@
+@page
+@model Korendzh.Web.Pages.Admin.EmailTestModel
+@{
+    ViewData["Title"] = "Тест email";
+}
+<h1>Тест отправки email</h1>
+<p class="muted">
+    Синхронная отправка через текущую SMTP-конфигурацию. Если письмо не дойдёт — детальную ошибку
+    смотрите в <code>\httpdocs\logs\stdout_*.log</code>. Запись в очередь не создаётся,
+    проверяется именно SMTP-канал «здесь и сейчас».
+</p>
+
+<form method="post" class="card" style="max-width:560px">
+    <div class="field">
+        <label asp-for="ToEmail">Email-получатель</label>
+        <input asp-for="ToEmail" type="email" required value="@Model.ToEmail" />
+    </div>
+    <div class="field">
+        <label asp-for="Subject">Тема</label>
+        <input asp-for="Subject" type="text" required value="@Model.Subject" />
+    </div>
+    <div class="field">
+        <label asp-for="Body">Тело (HTML)</label>
+        <textarea asp-for="Body" rows="6">@Model.Body</textarea>
+    </div>
+    <div class="actions">
+        <button class="btn" type="submit">Отправить</button>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    if (Model.IsSuccess)
+    {
+        <div class="status">@Model.ResultMessage</div>
+    }
+    else
+    {
+        <div class="error">
+            <strong>Ошибка:</strong> @Model.ResultMessage
+            @if (!string.IsNullOrEmpty(Model.ResultDetail))
+            {
+                <pre style="margin-top:0.5rem;white-space:pre-wrap;font-size:12px">@Model.ResultDetail</pre>
+            }
+        </div>
+    }
+}
+
+<div class="card" style="max-width:560px;margin-top:1.5rem">
+    <h3 style="margin-top:0">Текущая SMTP-конфигурация</h3>
+    <p class="muted" style="font-family:monospace;font-size:13px;line-height:1.6">
+        Host: @Model.Options.Host:@Model.Options.Port<br/>
+        UseStartTls: @Model.Options.UseStartTls<br/>
+        From: @Model.Options.FromName &lt;@Model.Options.FromAddress&gt;<br/>
+        User: @(string.IsNullOrEmpty(Model.Options.User) ? "(пусто — анонимная отправка)" : Model.Options.User)<br/>
+        Password: @(string.IsNullOrEmpty(Model.Options.Password) ? "(пусто)" : "***")<br/>
+        AppBaseUrl: @Model.Options.AppBaseUrl
+    </p>
+</div>
