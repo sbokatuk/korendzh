@@ -15,7 +15,8 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Behind IIS / Plesk reverse proxy.
-builder.Services.Configure<Microsoft.AspNetCore.HttpOverrides.ForwardedHeadersOptions>(o =>
+// ForwardedHeadersOptions живёт в Microsoft.AspNetCore.Builder, а enum ForwardedHeaders — в Microsoft.AspNetCore.HttpOverrides.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders =
         Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
