@@ -61,7 +61,33 @@ public class SmtpEmailSender : IEmailSender
         msg.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
 
         using var smtp = new SmtpClient();
-        var secure = _opt.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.SslOnConnect;
+        // Авто-детект режима безопасности по порту:
+        //   587 → StartTls (SUBMISSION), 465 → SslOnConnect (SMTPS), 25 → None.
+        // Если пользователь явно задал UseStartTls и оно противоречит порту 465 — предупреждаем
+        // и переопределяем (без этой защиты комбо «465 + StartTls» зависает на чтении до таймаута 120с).
+        SecureSocketOptions secure;
+        if (_opt.Port == 465)
+        {
+            if (_opt.UseStartTls)
+            {
+                _log.LogWarning(
+                    "SMTP config mismatch: port 465 ожидает SslOnConnect (implicit TLS), а UseStartTls=true. " +
+                    "Переопределяю режим на SslOnConnect. Для StartTls используйте порт 587.");
+            }
+            secure = SecureSocketOptions.SslOnConnect;
+        }
+        else if (_opt.Port == 587)
+        {
+            secure = SecureSocketOptions.StartTls;
+        }
+        else if (_opt.Port == 25)
+        {
+            secure = _opt.UseStartTls ? SecureSocketOptions.StartTlsWhenAvailable : SecureSocketOptions.None;
+        }
+        else
+        {
+            secure = _opt.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.SslOnConnect;
+        }
         var sw = Stopwatch.StartNew();
 
         try
