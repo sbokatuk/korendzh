@@ -35,6 +35,10 @@ public class InviteService : IInviteService
         Guid invitedById,
         CancellationToken ct = default)
     {
+        // Всегда нормализуем email к ASCII (Punycode-домен), чтобы хранение совпадало с тем,
+        // что присылает браузер на формах входа.
+        email = EmailNormalizer.ToAscii(email);
+
         var existing = await _users.FindByEmailAsync(email);
         if (existing != null)
         {

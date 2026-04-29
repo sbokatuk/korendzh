@@ -1,5 +1,6 @@
 using Korendzh.Domain;
 using Korendzh.Domain.Cms;
+using Korendzh.Infrastructure.Auth;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -62,11 +63,33 @@ public class DataSeeder
             return;
         }
 
-        var user = await _users.FindByEmailAsync(email);
+        // Ищем по обеим формам email (Cyrillic / Punycode).
+        var asciiEmail = EmailNormalizer.ToAscii(email);
+        var user = await _users.FindByEmailAsync(email)
+                   ?? await _users.FindByEmailAsync(asciiEmail);
         if (user is null)
         {
-            _log.LogWarning("Seed:ResetAdminPasswordOnStartup=true, но пользователь {Email} не найден — пропускаем.", email);
+            _log.LogWarning("Seed:ResetAdminPasswordOnStartup=true, но пользователь {Email} не найден (пробовали и Punycode {Ascii}) — пропускаем.",
+                email, asciiEmail);
             return;
+        }
+
+        // Если в БД лежит email в Unicode, а браузер шлёт Punycode — переводим хранимый email
+        // на ASCII-форму, чтобы логин теперь сходился.
+        if (!string.Equals(user.Email, asciiEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            _log.LogWarning("Нормализуем email пользователя из {Old} в {New}.", user.Email, asciiEmail);
+            user.Email = asciiEmail;
+            user.UserName = asciiEmail;
+            await _users.UpdateNormalizedEmailAsync(user);
+            await _users.UpdateNormalizedUserNameAsync(user);
+            var renameResult = await _users.UpdateAsync(user);
+            if (!renameResult.Succeeded)
+            {
+                _log.LogError("Не удалось переименовать email на {Email}: {Errors}", asciiEmail,
+                    string.Join("; ", renameResult.Errors.Select(e => e.Description)));
+                return;
+            }
         }
 
         if (await _users.HasPasswordAsync(user))
@@ -74,7 +97,7 @@ public class DataSeeder
             var removed = await _users.RemovePasswordAsync(user);
             if (!removed.Succeeded)
             {
-                _log.LogError("Не удалось снять старый пароль для {Email}: {Errors}", email,
+                _log.LogError("Не удалось снять старый пароль для {Email}: {Errors}", asciiEmail,
                     string.Join("; ", removed.Errors.Select(e => e.Description)));
                 return;
             }
@@ -82,7 +105,7 @@ public class DataSeeder
         var added = await _users.AddPasswordAsync(user, password);
         if (!added.Succeeded)
         {
-            _log.LogError("Не удалось установить новый пароль для {Email}: {Errors}", email,
+            _log.LogError("Не удалось установить новый пароль для {Email}: {Errors}", asciiEmail,
                 string.Join("; ", added.Errors.Select(e => e.Description)));
             return;
         }
@@ -95,7 +118,7 @@ public class DataSeeder
         }
 
         _log.LogWarning("Seed:ResetAdminPasswordOnStartup=true: пароль для {Email} переустановлен. " +
-                        "Снимите флаг и рестартните приложение.", email);
+                        "Снимите флаг и рестартните приложение.", asciiEmail);
     }
 
     private async Task SeedCmsDefaults(CancellationToken ct)
@@ -209,16 +232,19 @@ public class DataSeeder
 
         if (anyAdmin) return;
 
-        var email = _config["Seed:AdminEmail"];
+        var rawEmail = _config["Seed:AdminEmail"];
         var password = _config["Seed:AdminPassword"];
         var fullName = _config["Seed:AdminFullName"] ?? "System Administrator";
 
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(rawEmail) || string.IsNullOrWhiteSpace(password))
         {
             _log.LogWarning("Seed:AdminEmail / Seed:AdminPassword не заданы — пропускаем сидинг админа. " +
                             "Задайте переменные окружения и перезапустите приложение.");
             return;
         }
+
+        // Сохраняем email в ASCII-форме (Punycode-домен), чтобы совпадало с тем, что присылает браузер.
+        var email = EmailNormalizer.ToAscii(rawEmail);
 
         var admin = new AppUser
         {

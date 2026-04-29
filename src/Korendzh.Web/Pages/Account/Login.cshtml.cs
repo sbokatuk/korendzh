@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Korendzh.Infrastructure.Auth;
 using Korendzh.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -69,10 +70,16 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var user = await _users.FindByEmailAsync(Input.Email);
+        // Браузер для <input type="email"> с IDN-доменом отдаёт Punycode-форму.
+        // Чтобы найти пользователя независимо от того, в какой форме email хранится в БД,
+        // ищем сначала по введённому значению, потом по нормализованному ASCII (Punycode),
+        // потом по Unicode-форме (на случай если в БД хранится исходник).
+        var asciiEmail = EmailNormalizer.ToAscii(Input.Email);
+        var user = await _users.FindByEmailAsync(Input.Email)
+                   ?? await _users.FindByEmailAsync(asciiEmail);
         if (user is null)
         {
-            _log.LogInformation("Login: user with email '{Email}' not found", Input.Email);
+            _log.LogInformation("Login: user not found. Tried '{InputEmail}' and '{Ascii}'", Input.Email, asciiEmail);
             ErrorMessage = "Неверный email или пароль.";
             return Page();
         }

@@ -29,7 +29,10 @@ public class PasswordResetService : IPasswordResetService
 
     public async Task<bool> RequestAsync(string email, CancellationToken ct = default)
     {
-        var user = await _users.FindByEmailAsync(email);
+        // Поиск по обеим формам IDN: и тому что ввёл пользователь, и Punycode-варианту.
+        var asciiEmail = EmailNormalizer.ToAscii(email);
+        var user = await _users.FindByEmailAsync(email)
+                   ?? await _users.FindByEmailAsync(asciiEmail);
         if (user is null || !user.IsActive)
         {
             // Сознательно возвращаем true — не разглашаем существование аккаунта.
