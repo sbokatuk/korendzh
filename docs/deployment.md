@@ -82,9 +82,11 @@ dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release -o publish
 Connection string и API-ключи задаются через переменные окружения в Plesk; в `IConfiguration` они доступны прозрачно. Например:
 
 - `ConnectionStrings__Default`
-- `Smtp__Host`, `Smtp__User`, `Smtp__Password`
+- `Email__Host`, `Email__Port`, `Email__User`, `Email__Password`, `Email__UseStartTls`, `Email__FromAddress`, `Email__FromName`, `Email__AppBaseUrl`
 - `Google__ClientId`, `Google__ClientSecret`
-- `Push__Apns__KeyId`, `Push__Fcm__ServerKey`
+- `Jwt__Issuer`, `Jwt__Audience`, `Jwt__Key` (минимум 32 символа), `Jwt__AccessTokenLifetimeMinutes` — для мобильного API (см. [api.md](./api.md))
+- `Seed__AdminEmail`, `Seed__AdminPassword`, `Seed__AdminFullName`
+- `Push__Apns__KeyId`, `Push__Fcm__ServerKey` — после реализации реальных Push-провайдеров
 
 ## База данных (MSSQL)
 

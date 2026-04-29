@@ -82,29 +82,35 @@ dotnet run --project src/Korendzh.Web
 
 См. [docs/deployment.md](./docs/deployment.md) для пошагового чеклиста.
 
-## Что уже реализовано (skeleton + ядро)
+## Что уже реализовано
 
+Backend:
 - Доменные сущности, EF Core, Identity (Admin/Manager/Worker)
 - Авторизация (политики Admin/Manager+Admin), DivisionScope для проверок
 - Email-инвайты для воркеров и менеджеров
 - Self-service сброс пароля + принудительный сброс менеджером/админом
+- Полный Google OAuth-флоу через `/Account/ExternalLogin`
 - TimeEntry CRUD с soft-delete и optimistic concurrency
 - Справочник автомобилей с автокомплитом (создание из формы)
 - Управление воркерами (менеджер/админ), менеджерами и подразделениями (админ)
-- Статистика по воркерам / задачам / автомобилям + CSV-экспорт
+- Статистика: CSV + xlsx экспорт + графики (Chart.js)
 - Audit log через EF SaveChangesInterceptor
 - Очередь email-уведомлений с ретраями (фоновый сервис)
-- Push-отправитель — заглушка для следующих итераций (APNS/FCM)
+- Фоновая чистка просроченных токенов
+- REST API с JWT-аутентификацией: `/api/auth/login`, `/api/auth/me`, `/api/timeentries` (см. [docs/api.md](./docs/api.md))
 - GitHub Actions workflow для деплоя
+- Юнит-тесты в `tests/Korendzh.Tests`
+
+Mobile:
+- Скелет .NET MAUI: LoginPage, EntriesPage, CreateEntryPage, ApiClient (см. [docs/mobile.md](./docs/mobile.md))
 
 ## Что планируется
 
-- .NET MAUI мобильное приложение (см. [docs/system-overview.md](./docs/system-overview.md))
-- APNS / FCM реализация push
-- Excel (xlsx) экспорт статистики (сейчас только CSV)
-- Визуализация графиков для админ-статистики
-- Полный Google OAuth-флоу (сейчас задел в Program.cs)
-- Покрытие тестами
+- APNS / FCM полноценная отправка (сейчас Push-отправитель — заглушка `NoopPushSender`)
+- Pull-to-refresh, автокомплит авто и редактирование/удаление в мобильном приложении
+- Иконки и splash screen MAUI (сейчас дефолтные)
+- App icons + Resources для MAUI
+- E2E-тесты UI
 
 ## Документация
 
