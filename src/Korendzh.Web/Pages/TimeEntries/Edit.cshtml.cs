@@ -31,7 +31,7 @@ public class EditModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public bool NotFound { get; set; }
+    public bool EntryNotFound { get; set; }
 
     public class InputModel
     {
@@ -65,7 +65,7 @@ public class EditModel : PageModel
         var entry = await _db.TimeEntries.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
         if (entry is null)
         {
-            NotFound = true;
+            EntryNotFound = true;
             return Page();
         }
         if (!await _scope.CanAccessTimeEntryAsync(actor, entry.WorkerId)) return Forbid();
@@ -96,7 +96,7 @@ public class EditModel : PageModel
         var entry = await _db.TimeEntries.FirstOrDefaultAsync(e => e.Id == Input.Id);
         if (entry is null)
         {
-            NotFound = true;
+            EntryNotFound = true;
             return Page();
         }
         if (!await _scope.CanAccessTimeEntryAsync(actor, entry.WorkerId)) return Forbid();

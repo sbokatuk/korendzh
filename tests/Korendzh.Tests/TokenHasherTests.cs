@@ -1,4 +1,5 @@
 using Korendzh.Infrastructure.Auth;
+using Xunit;
 
 namespace Korendzh.Tests;
 

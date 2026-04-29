@@ -1,4 +1,5 @@
 using Korendzh.Domain;
+using Xunit;
 
 namespace Korendzh.Tests;
 

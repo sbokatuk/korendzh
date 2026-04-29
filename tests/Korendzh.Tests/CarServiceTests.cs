@@ -1,5 +1,6 @@
 using Korendzh.Infrastructure.Services;
 using Korendzh.Tests.Helpers;
+using Xunit;
 
 namespace Korendzh.Tests;
 

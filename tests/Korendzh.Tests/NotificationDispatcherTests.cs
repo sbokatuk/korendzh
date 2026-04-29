@@ -1,6 +1,7 @@
 using Korendzh.Domain;
 using Korendzh.Infrastructure.Notifications;
 using Korendzh.Tests.Helpers;
+using Xunit;
 
 namespace Korendzh.Tests;
 
