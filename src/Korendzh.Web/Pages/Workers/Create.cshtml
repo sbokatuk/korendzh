@@ -1,0 +1,40 @@
+@page
+@model Korendzh.Web.Pages.Workers.CreateModel
+@{
+    ViewData["Title"] = "Пригласить воркера";
+}
+<h1>Пригласить воркера</h1>
+
+<form method="post" class="card" style="max-width:500px;">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+
+    <div class="field">
+        <label asp-for="Input.FullName">ФИО</label>
+        <input asp-for="Input.FullName" type="text" maxlength="150" required />
+        <span asp-validation-for="Input.FullName"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Input.Email">Email</label>
+        <input asp-for="Input.Email" type="email" required />
+        <span asp-validation-for="Input.Email"></span>
+    </div>
+
+    @if (Model.IsAdmin)
+    {
+        <div class="field">
+            <label asp-for="Input.DivisionId">Подразделение</label>
+            <select asp-for="Input.DivisionId" required>
+                <option value="">— выберите —</option>
+                @foreach (var d in Model.Divisions)
+                {
+                    <option value="@d.Id">@d.Name</option>
+                }
+            </select>
+        </div>
+    }
+
+    <div class="actions">
+        <button class="btn" type="submit">Отправить приглашение</button>
+        <a class="btn secondary" asp-page="/Workers/Index">Отмена</a>
+    </div>
+</form>

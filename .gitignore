@@ -1,0 +1,39 @@
+# .NET
+bin/
+obj/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+
+# Build & deploy artifacts
+deploy_staging/
+*.Publish.xml
+PublishProfiles/
+
+# Secrets / dev databases
+appsettings.Local.json
+*.mdf
+*.ldf
+.env
+.env.*
+secrets.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# EF Core scaffolding/migrations bundle output
+*.zip
+ef-migrations-bundle*
+
+# NPM (if mobile/web ever needs it)
+node_modules/

@@ -1,0 +1,23 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.TimeEntries.DeleteModel
+@{
+    ViewData["Title"] = "Удалить запись";
+}
+<h1>Удалить запись?</h1>
+@if (Model.Entry is null)
+{
+    <div class="error">Запись не найдена.</div>
+}
+else
+{
+    <div class="card">
+        <p>Дата: @Model.Entry.WorkDate.ToString("yyyy-MM-dd")<br/>
+            Часы: @Model.Entry.Hours<br/>
+            Задача: @Model.Entry.TaskName</p>
+        <form method="post">
+            <input type="hidden" name="id" value="@Model.Entry.Id" />
+            <button class="btn danger" type="submit">Удалить</button>
+            <a class="btn secondary" asp-page="/TimeEntries/Index">Отмена</a>
+        </form>
+    </div>
+}

@@ -1,0 +1,21 @@
+@page
+@model Korendzh.Web.Pages.Cars.CreateModel
+@{
+    ViewData["Title"] = "Добавить автомобиль";
+}
+<h1>Добавить автомобиль</h1>
+<form method="post" class="card" style="max-width:500px;">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+    <div class="field">
+        <label asp-for="Input.Name">Название</label>
+        <input asp-for="Input.Name" type="text" maxlength="100" required />
+    </div>
+    <div class="field">
+        <label asp-for="Input.LicensePlate">Госномер</label>
+        <input asp-for="Input.LicensePlate" type="text" maxlength="20" />
+    </div>
+    <div class="actions">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn secondary" asp-page="/Cars/Index">Отмена</a>
+    </div>
+</form>

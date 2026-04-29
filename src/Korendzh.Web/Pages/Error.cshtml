@@ -1,0 +1,11 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Ошибка";
+}
+<h1>Произошла ошибка.</h1>
+@if (Model.ShowRequestId)
+{
+    <p>Идентификатор запроса: <code>@Model.RequestId</code></p>
+}
+<p>Если ошибка повторяется, сообщите администратору.</p>

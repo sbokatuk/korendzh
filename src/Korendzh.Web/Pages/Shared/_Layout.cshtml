@@ -1,0 +1,56 @@
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Korendzh</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+<header class="topbar">
+    <div class="brand"><a href="/">Korendzh</a></div>
+    <nav class="navmain">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            var user = await UserManager.GetUserAsync(User);
+            var isAdmin = User.IsInRole(Roles.Admin);
+            var isManager = User.IsInRole(Roles.Manager);
+
+            <a asp-page="/TimeEntries/Index">Часы</a>
+            @if (isManager || isAdmin)
+            {
+                <a asp-page="/Workers/Index">Воркеры</a>
+                <a asp-page="/Cars/Index">Автомобили</a>
+                <a asp-page="/Statistics/Index">Статистика</a>
+            }
+            @if (isAdmin)
+            {
+                <a asp-page="/Admin/Managers/Index">Менеджеры</a>
+                <a asp-page="/Admin/Divisions/Index">Подразделения</a>
+            }
+            <span class="user">@(user?.FullName ?? User.Identity?.Name)</span>
+            <form method="post" asp-page="/Account/Logout" style="display:inline">
+                <button type="submit" class="linklike">Выйти</button>
+            </form>
+        }
+        else
+        {
+            <a asp-page="/Account/Login">Войти</a>
+        }
+    </nav>
+</header>
+<main class="container">
+    @if (TempData["StatusMessage"] is string msg && !string.IsNullOrEmpty(msg))
+    {
+        <div class="status">@msg</div>
+    }
+    @RenderBody()
+</main>
+<footer class="footer">
+    <span>Korendzh · @DateTime.UtcNow.Year</span>
+</footer>
+@RenderSection("Scripts", required: false)
+</body>
+</html>

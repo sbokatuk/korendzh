@@ -1,0 +1,28 @@
+@page
+@model Korendzh.Web.Pages.Admin.Managers.IndexModel
+@{
+    ViewData["Title"] = "Менеджеры";
+}
+<div class="toolbar">
+    <h1>Менеджеры</h1>
+    <a class="btn" asp-page="/Admin/Managers/Create">+ Пригласить менеджера</a>
+</div>
+<table>
+    <thead><tr><th>ФИО</th><th>Email</th><th>Подразделение</th><th>Активен</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var m in Model.Items)
+    {
+        <tr>
+            <td>@m.FullName</td>
+            <td>@m.Email</td>
+            <td>@(Model.DivisionNames.GetValueOrDefault(m.DivisionId ?? Guid.Empty) ?? "—")</td>
+            <td>@(m.IsActive ? "да" : "нет")</td>
+            <td class="actions">
+                <form method="post" asp-page-handler="Toggle" asp-route-id="@m.Id" style="display:inline">
+                    <button class="btn @(m.IsActive ? "danger" : "")" type="submit">@(m.IsActive ? "Деактивировать" : "Активировать")</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -1,0 +1,74 @@
+@page
+@model Korendzh.Web.Pages.TimeEntries.IndexModel
+@{
+    ViewData["Title"] = "Рабочие часы";
+}
+<div class="toolbar">
+    <h1>Рабочие часы</h1>
+    <a asp-page="/TimeEntries/Create" class="btn">+ Новая запись</a>
+</div>
+
+<form method="get" class="card">
+    <div class="row">
+        <div class="field">
+            <label>От</label>
+            <input type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field">
+            <label>До</label>
+            <input type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+        </div>
+        @if (Model.IsManagerOrAdmin)
+        {
+            <div class="field">
+                <label>Воркер</label>
+                <select name="workerId">
+                    <option value="">— все —</option>
+                    @foreach (var w in Model.Workers)
+                    {
+                        <option value="@w.Id" selected="@(Model.WorkerId == w.Id)">@w.FullName</option>
+                    }
+                </select>
+            </div>
+        }
+        <div class="field" style="align-self:end">
+            <button type="submit" class="btn">Применить</button>
+        </div>
+    </div>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Воркер</th>
+            <th>Часы</th>
+            <th>Задача</th>
+            <th>Авто</th>
+            <th>Госномер</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Entries.Any())
+        {
+            <tr><td colspan="7" class="muted">Записей не найдено.</td></tr>
+        }
+        @foreach (var e in Model.Entries)
+        {
+            <tr>
+                <td>@e.WorkDate.ToString("yyyy-MM-dd")</td>
+                <td>@(Model.WorkerNames.GetValueOrDefault(e.WorkerId) ?? "—")</td>
+                <td>@e.Hours.ToString("0.##")</td>
+                <td>@e.TaskName</td>
+                <td>@(Model.CarNames.GetValueOrDefault(e.CarId ?? Guid.Empty) ?? "—")</td>
+                <td>@(e.LicensePlate ?? "—")</td>
+                <td class="actions">
+                    <a class="btn secondary" asp-page="/TimeEntries/Edit" asp-route-id="@e.Id">Изменить</a>
+                    <a class="btn danger" asp-page="/TimeEntries/Delete" asp-route-id="@e.Id">Удалить</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<p class="muted">Итого: @Model.Entries.Sum(e => e.Hours).ToString("0.##") ч</p>

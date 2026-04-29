@@ -1,0 +1,27 @@
+@page
+@model Korendzh.Web.Pages.Admin.Divisions.IndexModel
+@{
+    ViewData["Title"] = "Подразделения";
+}
+<div class="toolbar">
+    <h1>Подразделения</h1>
+    <a class="btn" asp-page="/Admin/Divisions/Create">+ Создать</a>
+</div>
+<table>
+    <thead><tr><th>Название</th><th>Менеджер</th><th>Статус</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var d in Model.Items)
+    {
+        <tr>
+            <td>@d.Name</td>
+            <td>@(Model.ManagerNames.GetValueOrDefault(d.ManagerId ?? Guid.Empty) ?? "—")</td>
+            <td>@(d.IsArchived ? "архив" : "активно")</td>
+            <td class="actions">
+                <form method="post" asp-page-handler="Toggle" asp-route-id="@d.Id" style="display:inline">
+                    <button class="btn @(d.IsArchived ? "" : "danger")" type="submit">@(d.IsArchived ? "Разархивировать" : "Архивировать")</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

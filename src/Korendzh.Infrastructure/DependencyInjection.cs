@@ -1,0 +1,61 @@
+using Korendzh.Infrastructure.Auditing;
+using Korendzh.Infrastructure.Auth;
+using Korendzh.Infrastructure.Identity;
+using Korendzh.Infrastructure.Notifications;
+using Korendzh.Infrastructure.Persistence;
+using Korendzh.Infrastructure.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Korendzh.Infrastructure;
+
+public static class DependencyInjection
+{
+    /// <summary>
+    /// Регистрирует EF Core, Identity, фоновые сервисы и доменные сервисы.
+    /// </summary>
+    public static IServiceCollection AddKorendzhInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddDbContext<AppDbContext>((sp, options) =>
+        {
+            var connStr = configuration.GetConnectionString("Default")
+                ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured");
+            options.UseSqlServer(connStr, sql => sql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
+            options.AddInterceptors(sp.GetRequiredService<AuditingInterceptor>());
+        });
+
+        services.AddScoped<AuditingInterceptor>();
+
+        services.AddIdentity<AppUser, AppRole>(options =>
+            {
+                options.Password.RequiredLength = 8;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.User.RequireUniqueEmail = true;
+                options.SignIn.RequireConfirmedEmail = false;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
+
+        services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<IPushSender, NoopPushSender>();
+        services.AddHostedService<NotificationSenderService>();
+
+        services.AddScoped<IInviteService, InviteService>();
+        services.AddScoped<IPasswordResetService, PasswordResetService>();
+        services.AddScoped<ITimeEntryService, TimeEntryService>();
+        services.AddScoped<ICarService, CarService>();
+        services.AddScoped<IStatisticsService, StatisticsService>();
+
+        return services;
+    }
+}

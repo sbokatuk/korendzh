@@ -1,0 +1,28 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.Cars.EditModel
+@{
+    ViewData["Title"] = "Изменить автомобиль";
+}
+<h1>Изменить автомобиль</h1>
+@if (Model.Target is null)
+{
+    <div class="error">Не найдено.</div>
+}
+else
+{
+    <form method="post" class="card" style="max-width:500px;">
+        <input type="hidden" asp-for="Input.Id" />
+        <div class="field">
+            <label asp-for="Input.Name">Название</label>
+            <input asp-for="Input.Name" type="text" maxlength="100" required />
+        </div>
+        <div class="field">
+            <label asp-for="Input.LicensePlate">Госномер</label>
+            <input asp-for="Input.LicensePlate" type="text" maxlength="20" />
+        </div>
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="btn secondary" asp-page="/Cars/Index">Отмена</a>
+        </div>
+    </form>
+}

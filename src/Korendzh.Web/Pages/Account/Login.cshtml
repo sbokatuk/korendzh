@@ -1,0 +1,35 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Вход";
+}
+<div class="card" style="max-width:420px;margin:1rem auto;">
+    <h1>Вход</h1>
+    <form method="post">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="error">@Model.ErrorMessage</div>
+        }
+        <div asp-validation-summary="ModelOnly" class="error"></div>
+        <div class="field">
+            <label asp-for="Input.Email"></label>
+            <input asp-for="Input.Email" type="email" autocomplete="username" required />
+            <span asp-validation-for="Input.Email"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Password"></label>
+            <input asp-for="Input.Password" type="password" autocomplete="current-password" required />
+            <span asp-validation-for="Input.Password"></span>
+        </div>
+        <div class="field">
+            <label><input type="checkbox" asp-for="Input.RememberMe" /> Запомнить меня</label>
+        </div>
+        <div class="actions">
+            <button class="btn" type="submit">Войти</button>
+            <a class="btn secondary" asp-page="/Account/ForgotPassword">Забыли пароль?</a>
+        </div>
+    </form>
+
+    @* Google OAuth: middleware зарегистрирован в Program.cs, но обработчик внешних логинов
+       (Pages/Account/ExternalLogin) ещё не реализован. Включается следующей итерацией. *@
+</div>

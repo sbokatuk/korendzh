@@ -1,0 +1,82 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.TimeEntries.EditModel
+@{
+    ViewData["Title"] = "Изменить запись";
+}
+<h1>Изменить запись</h1>
+
+@if (Model.NotFound)
+{
+    <div class="error">Запись не найдена или удалена.</div>
+}
+else
+{
+    <form method="post" class="card">
+        <input type="hidden" asp-for="Input.Id" />
+        <input type="hidden" asp-for="Input.RowVersion" />
+        <div asp-validation-summary="ModelOnly" class="error"></div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="Input.WorkDate">Дата</label>
+                <input asp-for="Input.WorkDate" type="date" required />
+                <span asp-validation-for="Input.WorkDate"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Hours">Часы</label>
+                <input asp-for="Input.Hours" type="number" step="0.25" min="0.25" max="24" required />
+                <span asp-validation-for="Input.Hours"></span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="Input.TaskName">Задача</label>
+            <input asp-for="Input.TaskName" type="text" maxlength="200" required />
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="Input.CarName">Автомобиль</label>
+                <input asp-for="Input.CarName" type="text" maxlength="100" list="cars-datalist" autocomplete="off" />
+                <datalist id="cars-datalist"></datalist>
+            </div>
+            <div class="field">
+                <label asp-for="Input.LicensePlate">Госномер</label>
+                <input asp-for="Input.LicensePlate" type="text" maxlength="20" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="Input.Description">Описание</label>
+            <textarea asp-for="Input.Description" maxlength="500"></textarea>
+        </div>
+
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="btn secondary" asp-page="/TimeEntries/Index">Отмена</a>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <script>
+        const carsInput = document.querySelector('input[name="Input.CarName"]');
+        const datalist = document.getElementById('cars-datalist');
+        let lastQuery = '';
+        carsInput?.addEventListener('input', async (e) => {
+            const q = e.target.value.trim();
+            if (q.length < 2 || q === lastQuery) return;
+            lastQuery = q;
+            const resp = await fetch('/api/cars/autocomplete?q=' + encodeURIComponent(q));
+            if (!resp.ok) return;
+            const items = await resp.json();
+            datalist.innerHTML = '';
+            items.forEach(it => {
+                const opt = document.createElement('option');
+                opt.value = it.name;
+                opt.label = it.licensePlate ? (it.name + ' · ' + it.licensePlate) : it.name;
+                datalist.appendChild(opt);
+            });
+        });
+    </script>
+}

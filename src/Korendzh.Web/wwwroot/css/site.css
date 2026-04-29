@@ -1,0 +1,47 @@
+* { box-sizing: border-box; }
+body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #1f2937; background: #f3f4f6; }
+a { color: #1d4ed8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; background: #111827; color: #f9fafb; }
+.topbar .brand a { color: #f9fafb; font-weight: 600; font-size: 1.1rem; }
+.topbar .navmain { display: flex; gap: 1rem; align-items: center; }
+.topbar .navmain a, .topbar .navmain span.user { color: #d1d5db; }
+.topbar .navmain a:hover { color: #fff; text-decoration: none; }
+.topbar .navmain .user { opacity: 0.7; margin-left: 1rem; }
+.topbar .navmain button.linklike { background: none; border: 0; color: #d1d5db; cursor: pointer; padding: 0; font: inherit; }
+.topbar .navmain button.linklike:hover { color: #fff; }
+
+.container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+.footer { text-align: center; padding: 1rem; color: #6b7280; font-size: 0.85rem; }
+
+h1, h2, h3 { color: #111827; }
+.status { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+
+.card { background: #fff; padding: 1.25rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 1rem; }
+
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid #e5e7eb; }
+th { background: #f9fafb; font-weight: 600; font-size: 0.9rem; }
+tr:hover td { background: #f9fafb; }
+
+form .field { margin-bottom: 0.9rem; }
+form label { display: block; margin-bottom: 0.25rem; font-weight: 500; color: #374151; }
+form input[type=text], form input[type=email], form input[type=password], form input[type=number], form input[type=date], form textarea, form select { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid #d1d5db; border-radius: 6px; font: inherit; }
+form textarea { min-height: 80px; }
+form .row { display: flex; gap: 1rem; }
+form .row > .field { flex: 1; }
+
+.btn { display: inline-block; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #1d4ed8; background: #1d4ed8; color: #fff; cursor: pointer; font: inherit; }
+.btn:hover { background: #1e40af; }
+.btn.secondary { background: #fff; color: #1d4ed8; }
+.btn.danger { background: #b91c1c; border-color: #b91c1c; }
+.btn.danger:hover { background: #991b1b; }
+
+.actions { display: flex; gap: 0.5rem; }
+.field-validation-error { color: #b91c1c; font-size: 0.85rem; }
+.input-validation-error { border-color: #b91c1c; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+.muted { color: #6b7280; font-size: 0.9rem; }

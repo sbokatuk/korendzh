@@ -1,0 +1,67 @@
+@page
+@model Korendzh.Web.Pages.Statistics.IndexModel
+@{
+    ViewData["Title"] = "Статистика";
+}
+<h1>Статистика</h1>
+
+<form method="get" class="card">
+    <div class="row">
+        <div class="field">
+            <label>Срез</label>
+            <select name="by">
+                <option value="worker" selected="@(Model.By == "worker")">По воркерам</option>
+                <option value="task" selected="@(Model.By == "task")">По задачам</option>
+                <option value="car" selected="@(Model.By == "car")">По автомобилям</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>От</label>
+            <input type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field">
+            <label>До</label>
+            <input type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+        </div>
+        @if (Model.IsAdmin)
+        {
+            <div class="field">
+                <label>Подразделение</label>
+                <select name="divisionId">
+                    <option value="">— все —</option>
+                    @foreach (var d in Model.Divisions)
+                    {
+                        <option value="@d.Id" selected="@(Model.DivisionId == d.Id)">@d.Name</option>
+                    }
+                </select>
+            </div>
+        }
+        <div class="field" style="align-self:end">
+            <button class="btn" type="submit">Применить</button>
+        </div>
+    </div>
+    <div class="actions">
+        <a class="btn secondary" asp-page-handler="Csv"
+           asp-route-by="@Model.By" asp-route-from="@Model.From.ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.To.ToString("yyyy-MM-dd")" asp-route-divisionId="@Model.DivisionId">
+            Выгрузить CSV
+        </a>
+    </div>
+</form>
+
+<table>
+    <thead><tr><th>Метка</th><th>Часы</th></tr></thead>
+    <tbody>
+        @foreach (var b in Model.Buckets)
+        {
+            <tr><td>@b.Label</td><td>@b.Hours.ToString("0.##")</td></tr>
+        }
+        @if (!Model.Buckets.Any())
+        {
+            <tr><td colspan="2" class="muted">Нет данных за выбранный период.</td></tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr><th>Итого</th><th>@Model.Buckets.Sum(b => b.Hours).ToString("0.##")</th></tr>
+    </tfoot>
+</table>

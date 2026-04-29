@@ -1,0 +1,41 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.Workers.EditModel
+@{
+    ViewData["Title"] = "Изменить воркера";
+}
+<h1>Изменить воркера</h1>
+
+@if (Model.Target is null)
+{
+    <div class="error">Пользователь не найден.</div>
+}
+else
+{
+    <form method="post" class="card" style="max-width:500px;">
+        <input type="hidden" asp-for="Input.Id" />
+        <div class="field">
+            <label asp-for="Input.FullName">ФИО</label>
+            <input asp-for="Input.FullName" type="text" maxlength="150" required />
+        </div>
+        <div class="field">
+            <label asp-for="Input.Email">Email</label>
+            <input asp-for="Input.Email" type="email" required />
+        </div>
+        @if (Model.IsAdmin)
+        {
+            <div class="field">
+                <label asp-for="Input.DivisionId">Подразделение</label>
+                <select asp-for="Input.DivisionId">
+                    @foreach (var d in Model.Divisions)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+        }
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="btn secondary" asp-page="/Workers/Index">Отмена</a>
+        </div>
+    </form>
+}

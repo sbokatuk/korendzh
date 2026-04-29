@@ -4,6 +4,18 @@
 
 Связано с [requirements.md](./requirements.md) (стек), [data-model.md](./data-model.md) (сидинг), [system-overview.md](./system-overview.md) (безопасность).
 
+## Реальные имена проектов и путей
+
+В коде:
+
+- Решение: `Korendzh.sln` (в корне репозитория).
+- Проекты: `src/Korendzh.Domain`, `src/Korendzh.Infrastructure`, `src/Korendzh.Web`.
+- Главный артефакт: `Korendzh.Web.dll` (его прописывает `web.config` в `aspNetCore arguments`).
+- DbContext-сборка для миграций: `Korendzh.Infrastructure.dll`.
+- Workflow: `.github/workflows/deploy.yml` (триггеры — пуш тега `v*` или ручной запуск).
+
+После сборки `dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release` папка `publish/` содержит всё, что нужно положить в `\httpdocs`.
+
 ## Целевая инфраструктура
 
 | Параметр | Значение |
@@ -98,11 +110,13 @@ using (var scope = app.Services.CreateScope()) {
 
 ### Сидинг первого админа
 
-См. [data-model.md](./data-model.md), раздел «Сидинг при деплое». Один из подходов:
+Реализовано в `src/Korendzh.Web/Seeding/DataSeeder.cs`. При старте приложения:
 
-- В коде миграций (или `IHostedService` при первом старте) проверяется наличие админа.
-- Если нет — создаётся аккаунт с email из переменной окружения `Seed__AdminEmail` и временным паролем из `Seed__AdminPassword` (либо генерируется и пишется в лог разово).
-- При первом входе админ обязан сменить пароль.
+1. Создаются роли `Admin`, `Manager`, `Worker`, если их нет.
+2. Если в БД нет ни одного пользователя с ролью `Admin`, создаётся аккаунт по переменным окружения `Seed:AdminEmail`, `Seed:AdminPassword`, `Seed:AdminFullName`.
+3. Если переменные не заданы — сидинг пропускается с предупреждением в логах.
+
+После первого входа администратор может сразу сбросить себе пароль через стандартный флоу.
 
 ## Домен и SSL
 
@@ -142,15 +156,16 @@ using (var scope = app.Services.CreateScope()) {
 
 ## CI/CD: GitHub Actions
 
-Минимальный workflow (`.github/workflows/deploy.yml`):
+Workflow `.github/workflows/deploy.yml` уже включён в репозиторий и делает следующее:
 
-1. Триггер: push тега `v*` в `main` либо ручной запуск.
-2. `dotnet restore`, `dotnet test`.
-3. `dotnet publish -c Release -o publish` для проекта веб-приложения.
-4. Коммит содержимого `publish/` в ветку `deploy` (через action типа `peaceiris/actions-gh-pages` или `git push --force` от bot-аккаунта).
-5. Plesk слышит push и обновляет `\httpdocs` автоматически.
+1. Триггер — пуш тега `v*` либо ручной запуск (workflow_dispatch).
+2. `dotnet restore` + `dotnet build` решения.
+3. `dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release -o publish`.
+4. Содержимое `publish/` коммитится в ветку `deploy` и `git push --force` пушит её в репозиторий.
+5. Plesk видит пуш в `deploy` и обновляет `\httpdocs` автоматически.
+6. Опциональный шаг: вызов `PLESK_WEBHOOK` (если задан в секретах) для принудительного pull со стороны Plesk.
 
-Опционально: smoke-тест после деплоя (curl на health-эндпоинт), Telegram/Slack уведомление о результате.
+Для отката — Run workflow вручную с указанием прежнего тега.
 
 ## Чеклист первого деплоя
 

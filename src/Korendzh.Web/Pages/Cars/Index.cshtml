@@ -1,0 +1,29 @@
+@page
+@model Korendzh.Web.Pages.Cars.IndexModel
+@{
+    ViewData["Title"] = "Автомобили";
+}
+<div class="toolbar">
+    <h1>Автомобили</h1>
+    <a class="btn" asp-page="/Cars/Create">+ Добавить</a>
+</div>
+
+<table>
+    <thead><tr><th>Название</th><th>Госномер</th><th>Активен</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var c in Model.Items)
+    {
+        <tr>
+            <td>@c.Name</td>
+            <td>@(c.LicensePlate ?? "—")</td>
+            <td>@(c.IsActive ? "да" : "нет")</td>
+            <td class="actions">
+                <a class="btn secondary" asp-page="/Cars/Edit" asp-route-id="@c.Id">Изменить</a>
+                <form method="post" asp-page-handler="Toggle" asp-route-id="@c.Id" style="display:inline">
+                    <button class="btn @(c.IsActive ? "danger" : "")" type="submit">@(c.IsActive ? "Деактивировать" : "Активировать")</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -1,0 +1,21 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Главная";
+}
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <h1>Здравствуйте, @Model.FullName!</h1>
+    <p>
+        Добро пожаловать в Korendzh. <a asp-page="/TimeEntries/Index">Перейти к учёту часов →</a>
+    </p>
+}
+else
+{
+    <div class="card">
+        <h1>Korendzh</h1>
+        <p>Система учёта рабочего времени.</p>
+        <p><a class="btn" asp-page="/Account/Login">Войти</a></p>
+    </div>
+}

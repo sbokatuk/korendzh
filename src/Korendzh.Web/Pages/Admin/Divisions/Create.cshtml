@@ -1,0 +1,17 @@
+@page
+@model Korendzh.Web.Pages.Admin.Divisions.CreateModel
+@{
+    ViewData["Title"] = "Создать подразделение";
+}
+<h1>Создать подразделение</h1>
+<form method="post" class="card" style="max-width:500px;">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+    <div class="field">
+        <label asp-for="Input.Name">Название</label>
+        <input asp-for="Input.Name" type="text" maxlength="100" required />
+    </div>
+    <div class="actions">
+        <button class="btn" type="submit">Создать</button>
+        <a class="btn secondary" asp-page="/Admin/Divisions/Index">Отмена</a>
+    </div>
+</form>

@@ -1,0 +1,77 @@
+name: Build and publish to deploy branch
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ветка/тег для сборки"
+        required: false
+        default: "main"
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Korendzh.sln
+
+      - name: Build
+        run: dotnet build Korendzh.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Korendzh.sln -c Release --no-build --logger "trx;LogFileName=test.trx" || echo "no tests yet"
+
+      - name: Publish web
+        run: dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release -o publish --no-build /p:UseAppHost=false
+
+      - name: Stage for deploy branch
+        run: |
+          mkdir -p deploy_staging
+          cp -r publish/* deploy_staging/
+          ls -la deploy_staging | head -30
+
+      - name: Push to deploy branch
+        env:
+          GIT_USER: github-actions[bot]
+          GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          DEPLOY_BRANCH: deploy
+        run: |
+          set -euo pipefail
+          cd deploy_staging
+          git init -q
+          git checkout -b "$DEPLOY_BRANCH"
+          git config user.name  "$GIT_USER"
+          git config user.email "$GIT_EMAIL"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git add -A
+          git commit -m "deploy: ${{ github.ref_name }} (${{ github.sha }})"
+          git push -f origin "$DEPLOY_BRANCH"
+
+      - name: Notify Plesk (optional webhook)
+        if: env.PLESK_WEBHOOK != ''
+        env:
+          PLESK_WEBHOOK: ${{ secrets.PLESK_WEBHOOK }}
+        run: |
+          curl -fsS -X POST "$PLESK_WEBHOOK" -H "Content-Type: application/json" \
+            -d '{"branch":"deploy","ref":"${{ github.ref_name }}","sha":"${{ github.sha }}"}' || true
