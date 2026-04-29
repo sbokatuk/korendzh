@@ -27,6 +27,6 @@ public class IndexModel : PageModel
         FullName = u?.FullName;
         IsAdmin = User.IsInRole(Roles.Admin);
         IsManagerOrAdmin = IsAdmin || User.IsInRole(Roles.Manager);
-        Role = IsAdmin ? "администратор" : User.IsInRole(Roles.Manager) ? "менеджер" : "воркер";
+        Role = IsAdmin ? "администратор" : User.IsInRole(Roles.Manager) ? "мастер" : "работник";
     }
 }

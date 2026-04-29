@@ -1,11 +1,11 @@
 @page
 @model Korendzh.Web.Pages.Admin.Managers.IndexModel
 @{
-    ViewData["Title"] = "Менеджеры";
+    ViewData["Title"] = "Мастера";
 }
 <div class="toolbar">
-    <h1>Менеджеры</h1>
-    <a class="btn" asp-page="/Admin/Managers/Create">+ Пригласить менеджера</a>
+    <h1>Мастера</h1>
+    <a class="btn" asp-page="/Admin/Managers/Create">+ Пригласить мастера</a>
 </div>
 <table>
     <thead><tr><th>ФИО</th><th>Email</th><th>Подразделение</th><th>Активен</th><th></th></tr></thead>
@@ -20,7 +20,7 @@
             <td class="actions">
                 <a class="btn secondary" asp-page="/Admin/Managers/Edit" asp-route-id="@m.Id">Изменить</a>
                 <form method="post" asp-page-handler="ResetPassword" asp-route-id="@m.Id" style="display:inline">
-                    <button class="btn secondary" type="submit" onclick="return confirm('Отправить менеджеру письмо со ссылкой для сброса пароля?')">Сброс пароля</button>
+                    <button class="btn secondary" type="submit" onclick="return confirm('Отправить мастеру письмо со ссылкой для сброса пароля?')">Сброс пароля</button>
                 </form>
                 <form method="post" asp-page-handler="Toggle" asp-route-id="@m.Id" style="display:inline">
                     <button class="btn @(m.IsActive ? "danger" : "")" type="submit">@(m.IsActive ? "Деактивировать" : "Активировать")</button>
