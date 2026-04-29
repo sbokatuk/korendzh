@@ -4,6 +4,8 @@
 
 Связано с [requirements.md](./requirements.md) (стек), [data-model.md](./data-model.md) (сидинг), [system-overview.md](./system-overview.md) (безопасность).
 
+> **Важно про .NET 8 на hoster.by.** Поддержка ASP.NET Core / .NET 8 на сервере есть, но **версия указывается в файлах сайта**, а не в Plesk-панели «Конфигурация ASP.NET» (там доступны только классические Framework 3.5/4.8 — она к нашему приложению отношения не имеет). Версия .NET 8 определяется через `web.config` (`aspNetCore` handler) и `Korendzh.Web.runtimeconfig.json` — оба файла попадают в `\httpdocs` автоматически из публикации.
+
 ## Реальные имена проектов и путей
 
 В коде:
@@ -75,16 +77,62 @@ dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release -o publish
 | Что | Где |
 |---|---|
 | Несекретные дефолты | `appsettings.json` (в репо) |
-| Несекретные прод-настройки | `appsettings.Production.json` (в репо или в `deploy` ветке) |
-| Секреты (DB, SMTP, Google OAuth, APNS/FCM) | Plesk → Applications → **Application Settings** (env vars) |
+| Несекретные прод-настройки | `appsettings.Production.json` (в репо) |
+| **Прод-секреты** (DB, SMTP, Google OAuth, JWT key, Seed admin) | **`appsettings.Local.json` в `\httpdocs`, создаётся вручную в Plesk File Manager** |
 | Локальные секреты разработчика | .NET User Secrets (только dev-машина) |
 
-Connection string и API-ключи задаются через переменные окружения в Plesk; в `IConfiguration` они доступны прозрачно. Например:
+### Почему `appsettings.Local.json`, а не Plesk env-переменные
+
+В тарифе hoster.by (Plesk Windows) нет UI для управления переменными окружения ASP.NET Core. Можно положить `<environmentVariables>` в `web.config`, но он перезаписывается на каждом деплое из ветки `deploy`.
+
+Решение: загружать дополнительный JSON-файл в `Program.cs`:
+
+```csharp
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+```
+
+Файл лежит в `\httpdocs\appsettings.Local.json`, **создаётся вручную через Plesk File Manager**, в репозиторий **не коммитится** (исключён в `.gitignore`). Plesk Git pull не трогает untracked-файлы — `appsettings.Local.json` переживает деплой.
+
+Шаблон `appsettings.Local.json` для копирования (в Plesk File Manager → `httpdocs` → Создать файл `appsettings.Local.json`):
+
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Server=localhost;Database=Korendzh;User Id=...;Password=...;TrustServerCertificate=True;MultipleActiveResultSets=true"
+  },
+  "Email": {
+    "Host": "smtp.hoster.by",
+    "Port": 587,
+    "UseStartTls": true,
+    "User": "noreply@бокатюк.бел",
+    "Password": "<smtp-pass>",
+    "FromAddress": "noreply@бокатюк.бел",
+    "FromName": "Korendzh",
+    "AppBaseUrl": "https://бокатюк.бел"
+  },
+  "Google": {
+    "ClientId": "<optional>",
+    "ClientSecret": "<optional>"
+  },
+  "Jwt": {
+    "Key": "<минимум-32-случайных-символа>"
+  },
+  "Seed": {
+    "AdminEmail": "admin@бокатюк.бел",
+    "AdminPassword": "<пароль-админа>",
+    "AdminFullName": "Сергей Бокатюк"
+  }
+}
+```
+
+Сразу после создания **смените права** на файл, чтобы только AppPool identity мог его читать (Plesk → Permissions).
+
+В качестве альтернативы переменные окружения процесса работают тоже (если Plesk их пробрасывает в IIS App Pool):
 
 - `ConnectionStrings__Default`
 - `Email__Host`, `Email__Port`, `Email__User`, `Email__Password`, `Email__UseStartTls`, `Email__FromAddress`, `Email__FromName`, `Email__AppBaseUrl`
 - `Google__ClientId`, `Google__ClientSecret`
-- `Jwt__Issuer`, `Jwt__Audience`, `Jwt__Key` (минимум 32 символа), `Jwt__AccessTokenLifetimeMinutes` — для мобильного API (см. [api.md](./api.md))
+- `Jwt__Issuer`, `Jwt__Audience`, `Jwt__Key`, `Jwt__AccessTokenLifetimeMinutes`
 - `Seed__AdminEmail`, `Seed__AdminPassword`, `Seed__AdminFullName`
 - `Push__Apns__KeyId`, `Push__Fcm__ServerKey` — после реализации реальных Push-провайдеров
 
@@ -168,6 +216,22 @@ Workflow `.github/workflows/deploy.yml` уже включён в репозит�
 6. Опциональный шаг: вызов `PLESK_WEBHOOK` (если задан в секретах) для принудительного pull со стороны Plesk.
 
 Для отката — Run workflow вручную с указанием прежнего тега.
+
+## Диагностика «сайт не открывается» / HTTP 500.30
+
+ASP.NET Core на IIS падает на старте → IIS отдаёт 500.30. Алгоритм:
+
+1. **Включить stdout-лог.** В `\httpdocs\web.config` поменять `stdoutLogEnabled="false"` на `"true"`. Создать в `\httpdocs` папку `logs\` (Plesk File Manager → Создать → Папка). Дать AppPool identity право записи на эту папку (Plesk → Permissions).
+2. **Перезапустить приложение.** Plesk → IIS Settings → «Recycle» / `iisreset` (если есть RDP).
+3. **Открыть сайт в браузере** — он отдаст 500.30. После этого в `\httpdocs\logs\stdout_*.log` появится файл с трассировкой исключения.
+4. **Прочитать stack trace.** Типовые причины:
+   - `InvalidOperationException: ConnectionStrings:Default is not configured` → создайте `appsettings.Local.json` (см. ниже).
+   - `SqlException: Cannot open database 'Korendzh'` → база не создана в MSSQL, либо строка подключения неверная.
+   - `Cannot find method` / `MissingMethodException` → не установлен .NET 8 Hosting Bundle. Запросите у hoster.by установку.
+   - `Migration … not found` → не сгенерирована EF-миграция. Локально выполните `dotnet ef migrations add Initial --project src/Korendzh.Infrastructure --startup-project src/Korendzh.Web` и запушьте.
+5. **После починки** — `stdoutLogEnabled` обратно в `false`, чтобы не флудить диск.
+
+Дополнительно: Windows Event Viewer → `Application Log` сохраняет ASP.NET Core stack trace даже при выключенном stdout-логе.
 
 ## Чеклист первого деплоя
 

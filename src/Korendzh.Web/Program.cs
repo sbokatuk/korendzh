@@ -14,6 +14,11 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Дополнительный файл с локальными/прод-секретами, не коммитится в репозиторий и переживает деплой
+// (Plesk Git pull не трогает untracked-файлы). Создаётся вручную в \httpdocs на сервере.
+// См. docs/deployment.md, раздел «Секреты на проде».
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // Behind IIS / Plesk reverse proxy.
 // ForwardedHeadersOptions живёт в Microsoft.AspNetCore.Builder, а enum ForwardedHeaders — в Microsoft.AspNetCore.HttpOverrides.
 builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
