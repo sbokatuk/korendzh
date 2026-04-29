@@ -1,0 +1,35 @@
+@page "/services"
+@model Korendzh.Web.Pages.Services.IndexModel
+@{
+    Layout = "_LayoutPublic";
+    ViewData["Title"] = "Услуги";
+}
+
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">Каталог</div>
+            <h2>Услуги</h2>
+            <p>Все работы, которые мы выполняем. Цены ориентировочные — точную смету согласуем после диагностики.</p>
+        </div>
+
+        <div class="services-grid">
+            @foreach (var s in Model.Items)
+            {
+                <div class="service-card">
+                    <div class="img" style="@(string.IsNullOrEmpty(s.ImageUrl) ? "" : $"background-image: url('{s.ImageUrl}')")"></div>
+                    <div class="body">
+                        <h3>@s.Title</h3>
+                        <p>@s.ShortDescription</p>
+                        @if (!string.IsNullOrEmpty(s.PriceLabel)) { <div class="price">@s.PriceLabel</div> }
+                        <a class="more" asp-page="/Services/Detail" asp-route-slug="@s.Slug">Подробнее</a>
+                    </div>
+                </div>
+            }
+            @if (!Model.Items.Any())
+            {
+                <p class="muted">Услуги пока не добавлены.</p>
+            }
+        </div>
+    </div>
+</section>

@@ -1,0 +1,35 @@
+@page
+@model Korendzh.Web.Pages.Admin.Cms.Pages.IndexModel
+@{
+    ViewData["Title"] = "Страницы (CMS)";
+}
+<div class="toolbar">
+    <h1>Страницы</h1>
+    <a class="btn" asp-page="/Admin/Cms/Pages/Create">+ Добавить страницу</a>
+</div>
+
+<table>
+    <thead><tr><th>Меню</th><th>Slug</th><th>Заголовок</th><th>В меню</th><th>Опубл.</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var p in Model.Items)
+    {
+        <tr>
+            <td>@p.MenuOrder</td>
+            <td><code>/p/@p.Slug</code></td>
+            <td>@p.Title</td>
+            <td>@(p.ShowInMenu ? "✓" : "—")</td>
+            <td>@(p.IsPublished ? "✓" : "—")</td>
+            <td class="actions">
+                <a class="btn secondary" asp-page="/Admin/Cms/Pages/Edit" asp-route-id="@p.Id">Изменить</a>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@p.Id" style="display:inline">
+                    <button class="btn danger" type="submit" onclick="return confirm('Удалить страницу?')">Удалить</button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (!Model.Items.Any())
+    {
+        <tr><td colspan="6" class="muted">Страниц пока нет.</td></tr>
+    }
+    </tbody>
+</table>

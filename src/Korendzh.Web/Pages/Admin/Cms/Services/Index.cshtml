@@ -1,0 +1,35 @@
+@page
+@model Korendzh.Web.Pages.Admin.Cms.Services.IndexModel
+@{
+    ViewData["Title"] = "Услуги (CMS)";
+}
+<div class="toolbar">
+    <h1>Услуги</h1>
+    <a class="btn" asp-page="/Admin/Cms/Services/Create">+ Добавить услугу</a>
+</div>
+
+<table>
+    <thead><tr><th>Порядок</th><th>Название</th><th>Slug</th><th>Цена</th><th>Опубл.</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var s in Model.Items)
+    {
+        <tr>
+            <td>@s.DisplayOrder</td>
+            <td>@s.Title</td>
+            <td><code>@s.Slug</code></td>
+            <td>@s.PriceLabel</td>
+            <td>@(s.IsPublished ? "✓" : "—")</td>
+            <td class="actions">
+                <a class="btn secondary" asp-page="/Admin/Cms/Services/Edit" asp-route-id="@s.Id">Изменить</a>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@s.Id" style="display:inline">
+                    <button class="btn danger" type="submit" onclick="return confirm('Удалить услугу?')">Удалить</button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (!Model.Items.Any())
+    {
+        <tr><td colspan="6" class="muted">Услуг пока нет.</td></tr>
+    }
+    </tbody>
+</table>

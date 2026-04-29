@@ -1,21 +1,125 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Главная";
+    Layout = "_LayoutPublic";
+    ViewData["Title"] = null; // используем дефолт из layout (SiteName)
+    var settings = Model.Settings;
 }
 
-@if (User.Identity?.IsAuthenticated == true)
-{
-    <h1>Здравствуйте, @Model.FullName!</h1>
-    <p>
-        Добро пожаловать в Korendzh. <a asp-page="/TimeEntries/Index">Перейти к учёту часов →</a>
-    </p>
-}
-else
-{
-    <div class="card">
-        <h1>Korendzh</h1>
-        <p>Система учёта рабочего времени.</p>
-        <p><a class="btn" asp-page="/Account/Login">Войти</a></p>
+<section class="hero">
+    <div class="container hero-inner">
+        <div>
+            <h1>@settings.HeroTitle</h1>
+            <p class="lead">@settings.HeroSubtitle</p>
+            <div class="cta-row">
+                <a class="btn large" asp-page="/Services/Index">Посмотреть услуги</a>
+                @if (!string.IsNullOrEmpty(settings.Phone))
+                {
+                    <a class="btn secondary large" href="tel:@settings.Phone.Replace(" ", "")">Позвонить @settings.Phone</a>
+                }
+            </div>
+        </div>
+        <div class="hero-image" style="@(string.IsNullOrEmpty(settings.HeroImageUrl) ? "" : $"background-image: url('{settings.HeroImageUrl}')")"></div>
     </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">Что мы делаем</div>
+            <h2>Услуги</h2>
+            <p>Полный спектр работ по легковому и коммерческому транспорту.</p>
+        </div>
+
+        <div class="services-grid">
+            @foreach (var s in Model.Services)
+            {
+                <div class="service-card">
+                    <div class="img" style="@(string.IsNullOrEmpty(s.ImageUrl) ? "" : $"background-image: url('{s.ImageUrl}')")"></div>
+                    <div class="body">
+                        <h3>@s.Title</h3>
+                        <p>@s.ShortDescription</p>
+                        @if (!string.IsNullOrEmpty(s.PriceLabel)) { <div class="price">@s.PriceLabel</div> }
+                        <a class="more" asp-page="/Services/Detail" asp-route-slug="@s.Slug">Подробнее</a>
+                    </div>
+                </div>
+            }
+            @if (!Model.Services.Any())
+            {
+                <p class="muted">Услуги пока не добавлены.</p>
+            }
+        </div>
+    </div>
+</section>
+
+@if (Model.Reviews.Any())
+{
+    <section class="section alt">
+        <div class="container">
+            <div class="section-head">
+                <div class="eyebrow">Что говорят клиенты</div>
+                <h2>Отзывы</h2>
+            </div>
+
+            <div class="reviews-grid">
+                @foreach (var r in Model.Reviews)
+                {
+                    <div class="review-card">
+                        @if (r.Rating > 0)
+                        {
+                            <div class="stars">@(new string('★', r.Rating))<span class="muted">@(new string('☆', 5 - r.Rating))</span></div>
+                        }
+                        <div class="text">@r.Text</div>
+                        <div class="author">
+                            <div class="avatar" style="@(string.IsNullOrEmpty(r.AuthorPhotoUrl) ? "" : $"background-image: url('{r.AuthorPhotoUrl}')")"></div>
+                            <div>
+                                <div class="name">@r.AuthorName</div>
+                                <div class="date">@r.ReviewDate.ToString("d MMMM yyyy", new System.Globalization.CultureInfo("ru-RU"))</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.Reviews.Count >= 6)
+            {
+                <p style="margin-top:32px;text-align:center"><a class="btn secondary" asp-page="/Reviews/Index">Все отзывы</a></p>
+            }
+        </div>
+    </section>
 }
+
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">Где нас найти</div>
+            <h2>Контакты</h2>
+        </div>
+
+        <div class="contacts-grid">
+            <div class="contact-block">
+                <h3>Адрес и часы работы</h3>
+                @if (!string.IsNullOrEmpty(settings.Address))
+                {
+                    <div class="label">Адрес</div>
+                    <p>@settings.Address</p>
+                }
+                <div class="label">Режим работы</div>
+                <p>@settings.WorkingHours</p>
+            </div>
+            <div class="contact-block">
+                <h3>Связь</h3>
+                @if (!string.IsNullOrEmpty(settings.Phone))
+                {
+                    <div class="label">Телефон</div>
+                    <p><a href="tel:@settings.Phone.Replace(" ", "")">@settings.Phone</a></p>
+                }
+                @if (!string.IsNullOrEmpty(settings.Email))
+                {
+                    <div class="label">Email</div>
+                    <p><a href="mailto:@settings.Email">@settings.Email</a></p>
+                }
+            </div>
+        </div>
+    </div>
+</section>

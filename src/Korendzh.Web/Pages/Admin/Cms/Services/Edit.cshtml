@@ -1,0 +1,21 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.Admin.Cms.Services.EditModel
+@{
+    ViewData["Title"] = "Изменить услугу";
+}
+<h1>Изменить услугу</h1>
+@if (Model.NotFoundFlag)
+{
+    <div class="error">Услуга не найдена.</div>
+}
+else
+{
+    <form method="post" enctype="multipart/form-data" class="card" style="max-width:760px">
+        <input type="hidden" asp-for="Input.Id" />
+        @await Html.PartialAsync("_Form", Model.Input)
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="btn secondary" asp-page="Index">Отмена</a>
+        </div>
+    </form>
+}

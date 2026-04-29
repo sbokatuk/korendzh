@@ -1,0 +1,87 @@
+@inject Korendzh.Infrastructure.Cms.ICmsService Cms
+@inject SignInManager<AppUser> SignInManager
+@{
+    var settings = await Cms.GetSiteSettingsAsync();
+    var menuPages = await Cms.GetMenuPagesAsync();
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " · " + settings.SiteName : settings.SiteName)</title>
+    <meta name="description" content="@settings.HeroSubtitle" />
+    <link rel="stylesheet" href="~/css/site-public.css" />
+</head>
+<body class="public">
+<header class="public-header">
+    <div class="container public-header-inner">
+        <a class="brand" asp-page="/Index">
+            <span class="brand-mark">К</span>
+            <span class="brand-name">@settings.SiteName</span>
+        </a>
+        <nav class="public-nav">
+            <a asp-page="/Services/Index">Услуги</a>
+            <a asp-page="/Reviews/Index">Отзывы</a>
+            @foreach (var p in menuPages)
+            {
+                <a asp-page="/Pages/View" asp-route-slug="@p.Slug">@p.Title</a>
+            }
+            <a asp-page="/Contacts/Index">Контакты</a>
+        </nav>
+        <div class="public-actions">
+            @if (!string.IsNullOrEmpty(settings.Phone))
+            {
+                <a class="phone" href="tel:@settings.Phone.Replace(" ", "")">@settings.Phone</a>
+            }
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <a class="btn login-btn" asp-page="/Dashboard/Index">Кабинет</a>
+            }
+            else
+            {
+                <a class="btn login-btn" asp-page="/Account/Login">Войти</a>
+            }
+        </div>
+    </div>
+</header>
+
+<main>
+    @if (TempData["StatusMessage"] is string msg && !string.IsNullOrEmpty(msg))
+    {
+        <div class="container"><div class="status">@msg</div></div>
+    }
+    @RenderBody()
+</main>
+
+<footer class="public-footer">
+    <div class="container public-footer-inner">
+        <div class="footer-col">
+            <div class="brand brand-small">
+                <span class="brand-mark">К</span>
+                <span class="brand-name">@settings.SiteName</span>
+            </div>
+            <p class="muted">Ремонт автомобилей. Честно. Прозрачно. С гарантией.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Контакты</h4>
+            @if (!string.IsNullOrEmpty(settings.Phone)) { <p>📞 <a href="tel:@settings.Phone.Replace(" ", "")">@settings.Phone</a></p> }
+            @if (!string.IsNullOrEmpty(settings.Email)) { <p>✉️ <a href="mailto:@settings.Email">@settings.Email</a></p> }
+            @if (!string.IsNullOrEmpty(settings.Address)) { <p>📍 @settings.Address</p> }
+        </div>
+        <div class="footer-col">
+            <h4>Режим работы</h4>
+            <p>@settings.WorkingHours</p>
+            <div class="socials">
+                @if (!string.IsNullOrEmpty(settings.InstagramUrl)) { <a href="@settings.InstagramUrl">Instagram</a> }
+                @if (!string.IsNullOrEmpty(settings.TelegramUrl)) { <a href="@settings.TelegramUrl">Telegram</a> }
+                @if (!string.IsNullOrEmpty(settings.VkUrl)) { <a href="@settings.VkUrl">ВКонтакте</a> }
+            </div>
+        </div>
+    </div>
+    <div class="container copyright muted">© @DateTime.Now.Year @settings.SiteName. Все права защищены.</div>
+</footer>
+
+@RenderSection("Scripts", required: false)
+</body>
+</html>

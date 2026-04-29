@@ -1,0 +1,57 @@
+@*
+    Партиал-форма редактирования/создания услуги. Передаётся через @await Html.PartialAsync("_Form", Model.Input)
+    Используется и Create.cshtml, и Edit.cshtml.
+*@
+@model Korendzh.Web.Pages.Admin.Cms.Services.ServiceFormInput
+
+<div asp-validation-summary="ModelOnly" class="error"></div>
+
+<div class="row">
+    <div class="field">
+        <label asp-for="Title">Название</label>
+        <input asp-for="Title" type="text" maxlength="200" required />
+        <span asp-validation-for="Title"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Slug">Slug (URL)</label>
+        <input asp-for="Slug" type="text" maxlength="100" required pattern="[a-z0-9\-]+" />
+        <small class="muted">Латиница, цифры, дефис. Пример: <code>diagnostika</code></small>
+    </div>
+</div>
+
+<div class="field">
+    <label asp-for="ShortDescription">Краткое описание</label>
+    <textarea asp-for="ShortDescription" maxlength="500" rows="2"></textarea>
+</div>
+
+<div class="field">
+    <label asp-for="DescriptionHtml">Полное описание (HTML)</label>
+    <textarea asp-for="DescriptionHtml" rows="8"></textarea>
+    <small class="muted">Можно использовать HTML: &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;a&gt;.</small>
+</div>
+
+<div class="row">
+    <div class="field">
+        <label asp-for="PriceLabel">Цена (текст)</label>
+        <input asp-for="PriceLabel" type="text" maxlength="100" placeholder="от 50 руб., по запросу..." />
+    </div>
+    <div class="field">
+        <label asp-for="DisplayOrder">Порядок (меньше = выше)</label>
+        <input asp-for="DisplayOrder" type="number" min="0" />
+    </div>
+</div>
+
+<div class="field">
+    <label>Изображение</label>
+    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    {
+        <div style="margin-bottom:8px"><img src="@Model.ImageUrl" style="max-width:300px;border-radius:6px" /></div>
+        <label><input type="checkbox" name="ClearImage" value="true" /> Удалить текущее изображение</label>
+    }
+    <input type="file" name="ImageFile" accept="image/*" />
+    <input type="hidden" asp-for="ImageUrl" />
+</div>
+
+<div class="field">
+    <label><input type="checkbox" asp-for="IsPublished" /> Опубликована (показывать на сайте)</label>
+</div>

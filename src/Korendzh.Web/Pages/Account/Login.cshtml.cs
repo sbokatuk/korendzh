@@ -64,7 +64,8 @@ public class LoginModel : PageModel
         var result = await _signIn.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
         if (result.Succeeded)
         {
-            return LocalRedirect(returnUrl ?? "/");
+            // По умолчанию авторизованный пользователь идёт в свой кабинет, а не на публичный лендинг.
+            return LocalRedirect(returnUrl ?? "/Dashboard");
         }
         if (result.IsLockedOut)
         {

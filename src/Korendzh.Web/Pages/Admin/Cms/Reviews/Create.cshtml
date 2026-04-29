@@ -1,0 +1,50 @@
+@page
+@model Korendzh.Web.Pages.Admin.Cms.Reviews.CreateModel
+@{
+    ViewData["Title"] = "Новый отзыв";
+}
+<h1>Новый отзыв</h1>
+<form method="post" enctype="multipart/form-data" class="card" style="max-width:680px">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+
+    <div class="row">
+        <div class="field">
+            <label asp-for="Input.AuthorName">Имя автора</label>
+            <input asp-for="Input.AuthorName" type="text" maxlength="150" required />
+        </div>
+        <div class="field">
+            <label asp-for="Input.ReviewDate">Дата</label>
+            <input asp-for="Input.ReviewDate" type="date" required />
+        </div>
+    </div>
+
+    <div class="field">
+        <label asp-for="Input.Text">Текст отзыва</label>
+        <textarea asp-for="Input.Text" maxlength="2000" rows="5" required></textarea>
+    </div>
+
+    <div class="row">
+        <div class="field">
+            <label asp-for="Input.Rating">Оценка (0..5, 0 = без звёзд)</label>
+            <input asp-for="Input.Rating" type="number" min="0" max="5" />
+        </div>
+        <div class="field">
+            <label asp-for="Input.DisplayOrder">Порядок (меньше = выше)</label>
+            <input asp-for="Input.DisplayOrder" type="number" min="0" />
+        </div>
+    </div>
+
+    <div class="field">
+        <label>Фото автора (опционально)</label>
+        <input type="file" name="PhotoFile" accept="image/*" />
+    </div>
+
+    <div class="field">
+        <label><input type="checkbox" asp-for="Input.IsPublished" /> Опубликован</label>
+    </div>
+
+    <div class="actions">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn secondary" asp-page="Index">Отмена</a>
+    </div>
+</form>

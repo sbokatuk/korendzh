@@ -1,0 +1,49 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.Admin.Cms.Pages.EditModel
+@{
+    ViewData["Title"] = "Изменить страницу";
+}
+<h1>Изменить страницу</h1>
+@if (Model.Target is null)
+{
+    <div class="error">Не найдено.</div>
+}
+else
+{
+    <form method="post" class="card" style="max-width:760px">
+        <input type="hidden" asp-for="Input.Id" />
+        <div asp-validation-summary="ModelOnly" class="error"></div>
+
+        <div class="row">
+            <div class="field">
+                <label asp-for="Input.Title">Заголовок</label>
+                <input asp-for="Input.Title" type="text" maxlength="200" required />
+            </div>
+            <div class="field">
+                <label asp-for="Input.Slug">Slug</label>
+                <input asp-for="Input.Slug" type="text" maxlength="100" pattern="[a-z0-9\-]+" required />
+            </div>
+        </div>
+        <div class="field">
+            <label asp-for="Input.ContentHtml">Содержимое (HTML)</label>
+            <textarea asp-for="Input.ContentHtml" rows="14"></textarea>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label><input type="checkbox" asp-for="Input.ShowInMenu" /> В меню</label>
+            </div>
+            <div class="field">
+                <label asp-for="Input.MenuOrder">Порядок</label>
+                <input asp-for="Input.MenuOrder" type="number" min="0" />
+            </div>
+            <div class="field">
+                <label><input type="checkbox" asp-for="Input.IsPublished" /> Опубликована</label>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="btn secondary" asp-page="Index">Отмена</a>
+            <a class="btn secondary" asp-page="/Pages/View" asp-route-slug="@Model.Target.Slug" target="_blank">Посмотреть на сайте</a>
+        </div>
+    </form>
+}

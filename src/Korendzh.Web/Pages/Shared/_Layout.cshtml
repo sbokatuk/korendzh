@@ -10,7 +10,7 @@
 </head>
 <body>
 <header class="topbar">
-    <div class="brand"><a href="/">Korendzh</a></div>
+    <div class="brand"><a asp-page="/Dashboard/Index">Korendzh · Кабинет</a></div>
     <nav class="navmain">
         @if (SignInManager.IsSignedIn(User))
         {
@@ -29,8 +29,13 @@
             {
                 <a asp-page="/Admin/Managers/Index">Менеджеры</a>
                 <a asp-page="/Admin/Divisions/Index">Подразделения</a>
+                <a asp-page="/Admin/Cms/SiteSettings">Сайт</a>
+                <a asp-page="/Admin/Cms/Services/Index">Услуги</a>
+                <a asp-page="/Admin/Cms/Reviews/Index">Отзывы</a>
+                <a asp-page="/Admin/Cms/Pages/Index">Страницы</a>
             }
             <span class="user">@(user?.FullName ?? User.Identity?.Name)</span>
+            <a asp-page="/Index" style="margin-left:8px">→ Сайт</a>
             <form method="post" asp-page="/Account/Logout" style="display:inline">
                 <button type="submit" class="linklike">Выйти</button>
             </form>

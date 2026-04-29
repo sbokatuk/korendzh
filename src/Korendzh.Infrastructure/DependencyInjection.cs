@@ -1,5 +1,6 @@
 using Korendzh.Infrastructure.Auditing;
 using Korendzh.Infrastructure.Auth;
+using Korendzh.Infrastructure.Cms;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Notifications;
 using Korendzh.Infrastructure.Persistence;
@@ -60,6 +61,10 @@ public static class DependencyInjection
         services.AddScoped<ITimeEntryService, TimeEntryService>();
         services.AddScoped<ICarService, CarService>();
         services.AddScoped<IStatisticsService, StatisticsService>();
+
+        // CMS — публичный лендинг.
+        services.AddScoped<ICmsService, CmsService>();
+        services.AddScoped<IMediaService, MediaService>();
 
         return services;
     }

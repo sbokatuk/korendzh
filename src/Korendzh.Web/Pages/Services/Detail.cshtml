@@ -1,0 +1,35 @@
+@page "/services/{slug}"
+@model Korendzh.Web.Pages.Services.DetailModel
+@{
+    Layout = "_LayoutPublic";
+    ViewData["Title"] = Model.Item?.Title ?? "Услуга";
+}
+
+<section class="section">
+    <div class="container">
+        @if (Model.Item is null)
+        {
+            <h1>Услуга не найдена</h1>
+            <p><a asp-page="/Services/Index">← Все услуги</a></p>
+        }
+        else
+        {
+            <div style="margin-bottom:32px"><a asp-page="/Services/Index" class="muted">← Все услуги</a></div>
+            @if (!string.IsNullOrEmpty(Model.Item.ImageUrl))
+            {
+                <div class="hero-image" style="background-image: url('@Model.Item.ImageUrl'); aspect-ratio: 21/9; margin-bottom: 32px;"></div>
+            }
+            <div class="prose">
+                <h1>@Model.Item.Title</h1>
+                @if (!string.IsNullOrEmpty(Model.Item.PriceLabel))
+                {
+                    <p style="font-size:20px;color:#f97316;font-weight:600">@Model.Item.PriceLabel</p>
+                }
+                @Html.Raw(Model.Item.DescriptionHtml)
+            </div>
+            <div style="margin-top:40px">
+                <a class="btn" asp-page="/Contacts/Index">Связаться с нами</a>
+            </div>
+        }
+    </div>
+</section>

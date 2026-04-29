@@ -1,4 +1,5 @@
 using Korendzh.Domain;
+using Korendzh.Domain.Cms;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Korendzh.Web.Seeding;
 
 /// <summary>
-/// Идемпотентный сидинг: роли + первый админ.
+/// Идемпотентный сидинг: роли + первый админ + дефолтные настройки сайта и страницы.
 /// Параметры берутся из переменных окружения (Plesk Application Settings).
 /// См. docs/data-model.md (раздел «Сидинг при деплое»).
 /// </summary>
@@ -37,6 +38,93 @@ public class DataSeeder
     {
         await SeedRoles();
         await SeedAdmin(ct);
+        await SeedCmsDefaults(ct);
+    }
+
+    private async Task SeedCmsDefaults(CancellationToken ct)
+    {
+        // SiteSettings — singleton (Id=1).
+        var anySettings = await _db.SiteSettings.AsNoTracking().AnyAsync(ct);
+        if (!anySettings)
+        {
+            _db.SiteSettings.Add(new SiteSettings
+            {
+                Id = 1,
+                SiteName = "Korendzh",
+                HeroTitle = "СТО Korendzh — ремонт без сюрпризов",
+                HeroSubtitle = "Диагностика, ремонт двигателя и подвески, замена расходников. Работаем с легковыми и коммерческими авто.",
+                Phone = "+375 (29) 000-00-00",
+                Email = "info@бокатюк.бел",
+                Address = "г. Минск, ул. Примерная, 1",
+                WorkingHours = "Пн–Пт: 9:00–19:00 · Сб: 10:00–16:00 · Вс: выходной",
+            });
+            _log.LogInformation("Seeded default SiteSettings");
+        }
+
+        // Дефолтные страницы — только если совсем нет страниц.
+        var anyPages = await _db.Pages.AsNoTracking().AnyAsync(ct);
+        if (!anyPages)
+        {
+            _db.Pages.Add(new Page
+            {
+                Slug = "about",
+                Title = "О нас",
+                ContentHtml = "<p>СТО Korendzh — это команда механиков с многолетним опытом. Мы делаем диагностику и ремонт честно: только то, что нужно, и с понятной сметой до начала работ.</p>",
+                ShowInMenu = true,
+                MenuOrder = 100,
+                IsPublished = true,
+            });
+            _db.Pages.Add(new Page
+            {
+                Slug = "guarantees",
+                Title = "Гарантии",
+                ContentHtml = "<p>На все работы — гарантия 6 месяцев. На запчасти — гарантия производителя. Если что-то пошло не так после ремонта, возвращайтесь — разберёмся бесплатно.</p>",
+                ShowInMenu = true,
+                MenuOrder = 200,
+                IsPublished = true,
+            });
+            _log.LogInformation("Seeded default pages");
+        }
+
+        // Дефолтные услуги — пара примеров, чтобы лендинг не был пустым.
+        var anyServices = await _db.Services.AsNoTracking().AnyAsync(ct);
+        if (!anyServices)
+        {
+            _db.Services.AddRange(
+                new Service
+                {
+                    Slug = "diagnostika",
+                    Title = "Компьютерная диагностика",
+                    ShortDescription = "Считываем ошибки, проверяем датчики, даём рекомендации.",
+                    DescriptionHtml = "<p>Полная диагностика двигателя, трансмиссии, ABS, подушек безопасности через профессиональный сканер. Объясняем понятно, что и зачем.</p>",
+                    PriceLabel = "от 50 руб.",
+                    DisplayOrder = 10,
+                    IsPublished = true,
+                },
+                new Service
+                {
+                    Slug = "to",
+                    Title = "Техническое обслуживание (ТО)",
+                    ShortDescription = "Замена масла, фильтров, свечей. По регламенту производителя.",
+                    DescriptionHtml = "<p>Плановое ТО для легковых и коммерческих авто. Используем оригинальные расходники или качественные аналоги — на ваш выбор.</p>",
+                    PriceLabel = "от 80 руб.",
+                    DisplayOrder = 20,
+                    IsPublished = true,
+                },
+                new Service
+                {
+                    Slug = "podveska",
+                    Title = "Ремонт подвески",
+                    ShortDescription = "Стойки, рычаги, сайлентблоки, шаровые. Без скрытых работ.",
+                    DescriptionHtml = "<p>Делаем подвеску так, чтобы поездка была спокойной, а тормозной путь предсказуемым. Перед ремонтом всегда показываем износ.</p>",
+                    PriceLabel = "по запросу",
+                    DisplayOrder = 30,
+                    IsPublished = true,
+                });
+            _log.LogInformation("Seeded sample services");
+        }
+
+        await _db.SaveChangesAsync(ct);
     }
 
     private async Task SeedRoles()

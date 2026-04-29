@@ -1,0 +1,40 @@
+@page "/reviews"
+@model Korendzh.Web.Pages.Reviews.IndexModel
+@{
+    Layout = "_LayoutPublic";
+    ViewData["Title"] = "Отзывы";
+}
+
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">Что говорят клиенты</div>
+            <h2>Отзывы</h2>
+            <p>Реальные отзывы людей, которые доверили нам свои автомобили.</p>
+        </div>
+
+        <div class="reviews-grid">
+            @foreach (var r in Model.Items)
+            {
+                <div class="review-card">
+                    @if (r.Rating > 0)
+                    {
+                        <div class="stars">@(new string('★', r.Rating))<span class="muted">@(new string('☆', 5 - r.Rating))</span></div>
+                    }
+                    <div class="text">@r.Text</div>
+                    <div class="author">
+                        <div class="avatar" style="@(string.IsNullOrEmpty(r.AuthorPhotoUrl) ? "" : $"background-image: url('{r.AuthorPhotoUrl}')")"></div>
+                        <div>
+                            <div class="name">@r.AuthorName</div>
+                            <div class="date">@r.ReviewDate.ToString("d MMMM yyyy", new System.Globalization.CultureInfo("ru-RU"))</div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (!Model.Items.Any())
+            {
+                <p class="muted">Отзывов пока нет.</p>
+            }
+        </div>
+    </div>
+</section>

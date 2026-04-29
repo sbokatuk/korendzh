@@ -31,6 +31,10 @@ Thumbs.db
 logs/
 *.log
 
+# Uploads (создаются в рантайме на проде; не должны попадать в репозиторий)
+src/Korendzh.Web/wwwroot/uploads/
+App_Data/dp-keys/
+
 # EF Core scaffolding/migrations bundle output
 *.zip
 ef-migrations-bundle*

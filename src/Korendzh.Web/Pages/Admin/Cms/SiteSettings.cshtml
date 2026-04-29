@@ -1,0 +1,74 @@
+@page
+@model Korendzh.Web.Pages.Admin.Cms.SiteSettingsModel
+@{
+    ViewData["Title"] = "Настройки сайта";
+}
+<h1>Настройки сайта</h1>
+
+<form method="post" enctype="multipart/form-data" class="card" style="max-width:760px">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+
+    <div class="field">
+        <label asp-for="Input.SiteName">Название сайта</label>
+        <input asp-for="Input.SiteName" type="text" maxlength="100" required />
+    </div>
+
+    <h3 style="margin-top:24px">Hero на главной</h3>
+    <div class="field">
+        <label asp-for="Input.HeroTitle">Заголовок</label>
+        <input asp-for="Input.HeroTitle" type="text" maxlength="200" />
+    </div>
+    <div class="field">
+        <label asp-for="Input.HeroSubtitle">Подзаголовок</label>
+        <textarea asp-for="Input.HeroSubtitle" maxlength="500" rows="3"></textarea>
+    </div>
+    <div class="field">
+        <label>Hero-изображение</label>
+        @if (!string.IsNullOrEmpty(Model.Input.HeroImageUrl))
+        {
+            <div style="margin-bottom:8px"><img src="@Model.Input.HeroImageUrl" style="max-width:300px;border-radius:6px" /></div>
+            <label><input type="checkbox" name="ClearHeroImage" value="true" /> Удалить текущее изображение</label>
+        }
+        <input type="file" name="HeroImageFile" accept="image/*" />
+        <input type="hidden" asp-for="Input.HeroImageUrl" />
+    </div>
+
+    <h3 style="margin-top:24px">Контакты</h3>
+    <div class="row">
+        <div class="field">
+            <label asp-for="Input.Phone">Телефон</label>
+            <input asp-for="Input.Phone" type="text" maxlength="50" />
+        </div>
+        <div class="field">
+            <label asp-for="Input.Email">Email</label>
+            <input asp-for="Input.Email" type="email" maxlength="256" />
+        </div>
+    </div>
+    <div class="field">
+        <label asp-for="Input.Address">Адрес</label>
+        <input asp-for="Input.Address" type="text" maxlength="300" />
+    </div>
+    <div class="field">
+        <label asp-for="Input.WorkingHours">Режим работы</label>
+        <input asp-for="Input.WorkingHours" type="text" maxlength="200" />
+    </div>
+
+    <h3 style="margin-top:24px">Социальные сети (опционально)</h3>
+    <div class="field">
+        <label asp-for="Input.InstagramUrl">Instagram URL</label>
+        <input asp-for="Input.InstagramUrl" type="url" maxlength="500" />
+    </div>
+    <div class="field">
+        <label asp-for="Input.TelegramUrl">Telegram URL</label>
+        <input asp-for="Input.TelegramUrl" type="url" maxlength="500" />
+    </div>
+    <div class="field">
+        <label asp-for="Input.VkUrl">ВКонтакте URL</label>
+        <input asp-for="Input.VkUrl" type="url" maxlength="500" />
+    </div>
+
+    <div class="actions">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn secondary" asp-page="/Index">Открыть сайт</a>
+    </div>
+</form>

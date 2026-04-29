@@ -105,8 +105,13 @@ builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
 // Razor Pages для UI + контроллеры для API/auto-complete.
 builder.Services.AddRazorPages(opt =>
 {
+    // По умолчанию всё закрыто; явно открываем публичные разделы.
     opt.Conventions.AuthorizeFolder("/");
     opt.Conventions.AllowAnonymousToFolder("/Account");
+    opt.Conventions.AllowAnonymousToFolder("/Services");
+    opt.Conventions.AllowAnonymousToFolder("/Reviews");
+    opt.Conventions.AllowAnonymousToFolder("/Contacts");
+    opt.Conventions.AllowAnonymousToFolder("/Pages"); // Pages/View.cshtml для /p/{slug}
     opt.Conventions.AllowAnonymousToPage("/Index");
     opt.Conventions.AllowAnonymousToPage("/Error");
 });

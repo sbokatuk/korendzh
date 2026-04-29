@@ -1,4 +1,5 @@
 using Korendzh.Domain;
+using Korendzh.Domain.Cms;
 using Korendzh.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,13 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<PushDevice> PushDevices => Set<PushDevice>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
     public DbSet<NotificationLogEntry> Notifications => Set<NotificationLogEntry>();
+
+    // CMS / публичный лендинг.
+    public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
+    public DbSet<Service> Services => Set<Service>();
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Page> Pages => Set<Page>();
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

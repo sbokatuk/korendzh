@@ -1,0 +1,13 @@
+@page
+@model Korendzh.Web.Pages.Admin.Cms.Services.CreateModel
+@{
+    ViewData["Title"] = "Новая услуга";
+}
+<h1>Новая услуга</h1>
+<form method="post" enctype="multipart/form-data" class="card" style="max-width:760px">
+    @await Html.PartialAsync("_Form", Model.Input)
+    <div class="actions">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn secondary" asp-page="/Admin/Cms/Services/Index">Отмена</a>
+    </div>
+</form>
