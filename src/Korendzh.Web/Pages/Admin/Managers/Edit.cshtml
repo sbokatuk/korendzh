@@ -1,0 +1,55 @@
+@page "{id:guid}"
+@model Korendzh.Web.Pages.Admin.Managers.EditModel
+@{
+    ViewData["Title"] = "Изменить менеджера";
+}
+<h1>Изменить менеджера</h1>
+@if (Model.Target is null)
+{
+    <div class="error">Менеджер не найден.</div>
+    <p><a asp-page="/Admin/Managers/Index">← К списку</a></p>
+}
+else
+{
+    <form method="post" class="card" style="max-width:560px">
+        <input type="hidden" asp-for="Input.Id" />
+        <div asp-validation-summary="ModelOnly" class="error"></div>
+
+        <div class="field">
+            <label asp-for="Input.FullName">ФИО</label>
+            <input asp-for="Input.FullName" type="text" maxlength="150" required />
+            <span asp-validation-for="Input.FullName"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Email">Email</label>
+            <input asp-for="Input.Email" type="email" maxlength="256" required />
+            <span asp-validation-for="Input.Email"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.DivisionId">Подразделение</label>
+            <select asp-for="Input.DivisionId">
+                <option value="">— нет —</option>
+                @foreach (var d in Model.Divisions)
+                {
+                    <option value="@d.Id">@d.Name</option>
+                }
+            </select>
+            <small class="muted">Менеджер становится владельцем выбранного подразделения. Прежний владелец, если был, будет переназначен.</small>
+        </div>
+
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="btn secondary" asp-page="Index">Отмена</a>
+        </div>
+    </form>
+
+    <div class="card" style="max-width:560px;margin-top:1rem">
+        <h3 style="margin-top:0">Сброс пароля</h3>
+        <p class="muted">Отправит на email менеджера ссылку, по которой он сможет задать новый пароль. Действует 1 час.</p>
+        <form method="post" asp-page="Index" asp-page-handler="ResetPassword" asp-route-id="@Model.Target.Id">
+            <button class="btn secondary" type="submit" onclick="return confirm('Отправить письмо со ссылкой для сброса пароля?')">
+                Отправить ссылку для сброса
+            </button>
+        </form>
+    </div>
+}
