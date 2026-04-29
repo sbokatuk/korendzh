@@ -145,16 +145,24 @@ builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, relo
 
 ### Миграции схемы
 
-Используется **EF Core Migrations**. Стратегия — **migrate-on-startup** для упрощения деплоя:
+Используется **EF Core Migrations**. Стратегия — **migrate-on-startup** с фолбэком на `EnsureCreated()` для бутстрапа.
+
+**Логика в Program.cs:**
 
 ```csharp
-using (var scope = app.Services.CreateScope()) {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
+var hasMigrations = db.Database.GetMigrations().Any();
+if (hasMigrations)
+    await db.Database.MigrateAsync();   // обычный путь
+else
+    await db.Database.EnsureCreatedAsync(); // бутстрап без миграций
 ```
 
-Это запускает применение миграций при старте процесса. Подходит, пока миграции быстрые и не требуют ручного контроля.
+**Два режима:**
+
+1. **Production (рекомендуемый):** в репозитории есть хотя бы одна миграция (`Initial`). На старте `MigrateAsync` применяет все pending миграции. Это работает и для первого деплоя, и для последующих.
+2. **Bootstrap (для быстрого старта без `dotnet ef`):** если в коде нет ни одной миграции, EF создаёт схему напрямую через `EnsureCreated()`. Полезно, чтобы развернуть проект «здесь и сейчас», не возясь с CLI. **Caveat:** позже, когда добавите первую миграцию, EF попытается выполнить её на уже существующих таблицах и упадёт. В этот момент нужно либо:
+   - очистить БД (drop + create) и пересоздать через миграцию, либо
+   - вручную добавить запись в `__EFMigrationsHistory`, чтобы EF считал миграцию уже применённой.
 
 Если потребуется большая миграция (изменение типа колонки на огромной таблице, переиндексирование) — выкатывается отдельным шагом через `dotnet ef migrations bundle` и SQL-скрипт, выполняемый в окно обслуживания.
 

@@ -139,11 +139,35 @@ app.MapRazorPages();
 app.MapControllers();
 
 // Миграции и сидинг при старте.
+//
+// Логика:
+//   1. Если в коде есть EF-миграции (папка src/Korendzh.Infrastructure/Migrations/) — применяем их.
+//   2. Если миграций ещё нет (первый деплой без локального dotnet-ef) — создаём схему через
+//      EnsureCreated. Это бутстрап-режим: позволяет запустить приложение без миграций,
+//      но в этом случае позже, когда добавите первую миграцию, придётся либо очистить БД,
+//      либо вручную «отметить» её applied через __EFMigrationsHistory.
+//
+// Рекомендуемый production-флоу: одна миграция «Initial» в репозитории. Тогда EnsureCreated
+// никогда не вызывается, MigrateAsync применяет всё корректно.
 using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
     var db = sp.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    var startupLogger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+    var hasMigrations = db.Database.GetMigrations().Any();
+    if (hasMigrations)
+    {
+        startupLogger.LogInformation("Applying EF migrations...");
+        await db.Database.MigrateAsync();
+    }
+    else
+    {
+        startupLogger.LogWarning(
+            "No EF migrations found in code. Falling back to EnsureCreated() — schema will be created from current model. " +
+            "Add a proper migration via 'dotnet ef migrations add Initial' before iterating on the model.");
+        await db.Database.EnsureCreatedAsync();
+    }
 
     var seeder = sp.GetRequiredService<DataSeeder>();
     await seeder.RunAsync();
