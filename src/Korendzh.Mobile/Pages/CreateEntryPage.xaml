@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Korendzh.Mobile.Pages.CreateEntryPage"
+             Title="Новая запись"
+             BackgroundColor="{StaticResource Surface}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,12" Spacing="12">
+            <Label Text="Дата" />
+            <DatePicker x:Name="DatePicker" />
+
+            <Label Text="Часы" />
+            <Entry x:Name="HoursEntry" Keyboard="Numeric" Placeholder="например, 8" />
+
+            <Label Text="Задача" />
+            <Entry x:Name="TaskEntry" Placeholder="что делал" />
+
+            <Label Text="Автомобиль" />
+            <Entry x:Name="CarEntry" Placeholder="марка / модель" />
+
+            <Label Text="Госномер" />
+            <Entry x:Name="PlateEntry" Placeholder="например, AA-1234-7" />
+
+            <Label Text="Описание" />
+            <Editor x:Name="DescEntry" HeightRequest="80" Placeholder="комментарий" />
+
+            <Label x:Name="ErrorLabel" TextColor="#b91c1c" IsVisible="False" />
+
+            <Button x:Name="SaveBtn" Text="Сохранить" Clicked="OnSaveClicked" />
+            <Button Text="Отмена" BackgroundColor="#6b7280" Clicked="OnCancelClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

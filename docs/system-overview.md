@@ -126,6 +126,21 @@
 - Мультиязычность UI (только русский).
 - Мерж дублей в справочнике автомобилей (плановый административный инструмент).
 
+## Что реализовано в коде
+
+Backend (`src/Korendzh.Web` + `Korendzh.Infrastructure` + `Korendzh.Domain`):
+- TimeEntry CRUD, soft-delete, optimistic concurrency
+- Инвайт-флоу для воркеров и менеджеров, self-service сброс пароля
+- ASP.NET Identity (Admin/Manager/Worker) + Google OAuth + JWT bearer для мобильного
+- Audit log через SaveChangesInterceptor, очередь email-уведомлений с ретраями
+- Статистика по воркерам/задачам/авто, CSV и xlsx экспорт, графики (Chart.js)
+- Фоновая чистка просроченных токенов (`TokenCleanupService`)
+- REST API для мобильного — см. [api.md](./api.md)
+
+Мобильное приложение (`src/Korendzh.Mobile`) — скелет на .NET MAUI с LoginPage / EntriesPage / CreateEntryPage. См. [mobile.md](./mobile.md).
+
+Тесты (`tests/Korendzh.Tests`) — юнит-тесты на TokenHasher, CarService, NotificationDispatcher, токены.
+
 ---
 
 *Документ обновлён: 2026-04-29*

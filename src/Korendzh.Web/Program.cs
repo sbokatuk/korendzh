@@ -1,12 +1,16 @@
+using System.Text;
 using Korendzh.Infrastructure;
 using Korendzh.Infrastructure.Auditing;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
 using Korendzh.Web.Auth;
 using Korendzh.Web.Seeding;
+using Korendzh.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +28,12 @@ builder.Services.AddScoped<DivisionScope>();
 
 builder.Services.AddKorendzhInfrastructure(builder.Configuration);
 
+// JWT для мобильного клиента.
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddScoped<JwtTokenIssuer>();
+
+var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+
 // Cookie-based auth (Identity already wires its own; tweak login paths).
 builder.Services.ConfigureApplicationCookie(opt =>
 {
@@ -37,18 +47,40 @@ builder.Services.ConfigureApplicationCookie(opt =>
     opt.SlidingExpiration = true;
 });
 
-// Google OAuth — стаб конфигурации; ключи задаются через Application Settings (Google:ClientId/ClientSecret).
+// Bearer (для API): проверяет JWT-токен по тому же Issuer/Audience/Key, что выдаёт JwtTokenIssuer.
+var authBuilder = builder.Services.AddAuthentication();
+
+if (!string.IsNullOrEmpty(jwt.Key))
+{
+    authBuilder.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, opt =>
+    {
+        opt.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        opt.SaveToken = true;
+        opt.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+}
+
+// Google OAuth — middleware подключается, обработка — в Pages/Account/ExternalLogin.
 var googleClientId = builder.Configuration["Google:ClientId"];
 var googleClientSecret = builder.Configuration["Google:ClientSecret"];
 if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
 {
-    builder.Services.AddAuthentication()
-        .AddGoogle(opt =>
-        {
-            opt.ClientId = googleClientId;
-            opt.ClientSecret = googleClientSecret;
-            opt.SignInScheme = IdentityConstants.ExternalScheme;
-        });
+    authBuilder.AddGoogle(opt =>
+    {
+        opt.ClientId = googleClientId;
+        opt.ClientSecret = googleClientSecret;
+        opt.SignInScheme = IdentityConstants.ExternalScheme;
+    });
 }
 
 builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
@@ -64,6 +96,9 @@ builder.Services.AddRazorPages(opt =>
 builder.Services.AddControllers();
 
 builder.Services.AddScoped<DataSeeder>();
+
+// Фоновая чистка просроченных токенов.
+builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddRequestLocalization(opt =>
 {
@@ -109,3 +144,5 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+public partial class Program { }

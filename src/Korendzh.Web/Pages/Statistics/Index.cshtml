@@ -44,10 +44,22 @@
         <a class="btn secondary" asp-page-handler="Csv"
            asp-route-by="@Model.By" asp-route-from="@Model.From.ToString("yyyy-MM-dd")"
            asp-route-to="@Model.To.ToString("yyyy-MM-dd")" asp-route-divisionId="@Model.DivisionId">
-            Выгрузить CSV
+            CSV
+        </a>
+        <a class="btn secondary" asp-page-handler="Xlsx"
+           asp-route-by="@Model.By" asp-route-from="@Model.From.ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.To.ToString("yyyy-MM-dd")" asp-route-divisionId="@Model.DivisionId">
+            Excel (xlsx)
         </a>
     </div>
 </form>
+
+@if (Model.Buckets.Any())
+{
+    <div class="card">
+        <canvas id="statsChart" height="100"></canvas>
+    </div>
+}
 
 <table>
     <thead><tr><th>Метка</th><th>Часы</th></tr></thead>
@@ -65,3 +77,34 @@
         <tr><th>Итого</th><th>@Model.Buckets.Sum(b => b.Hours).ToString("0.##")</th></tr>
     </tfoot>
 </table>
+
+@section Scripts {
+    @if (Model.Buckets.Any())
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+        <script>
+            const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Buckets.Select(b => b.Label)));
+            const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Buckets.Select(b => (double)b.Hours)));
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Часы',
+                        data,
+                        backgroundColor: 'rgba(29, 78, 216, 0.6)',
+                        borderColor: 'rgba(29, 78, 216, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        </script>
+    }
+}

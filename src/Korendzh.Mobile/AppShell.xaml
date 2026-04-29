@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:pages="clr-namespace:Korendzh.Mobile.Pages"
+       x:Class="Korendzh.Mobile.AppShell"
+       Shell.FlyoutBehavior="Disabled">
+
+    <ShellContent Title="Вход" ContentTemplate="{DataTemplate pages:LoginPage}" Route="login" />
+    <ShellContent Title="Мои часы" ContentTemplate="{DataTemplate pages:EntriesPage}" Route="entries" />
+    <ShellContent Title="Новая запись" ContentTemplate="{DataTemplate pages:CreateEntryPage}" Route="create" />
+
+</Shell>

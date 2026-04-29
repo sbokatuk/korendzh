@@ -67,6 +67,7 @@ dotnet run --project src/Korendzh.Web
 | `Email:Host`, `Email:Port`, `Email:User`, `Email:Password`, `Email:UseStartTls` | SMTP для рассылок |
 | `Email:FromAddress`, `Email:FromName`, `Email:AppBaseUrl` | Параметры отправителя и базовый URL для ссылок в письмах |
 | `Google:ClientId`, `Google:ClientSecret` | Google OAuth (опционально) |
+| `Jwt:Issuer`, `Jwt:Audience`, `Jwt:Key`, `Jwt:AccessTokenLifetimeMinutes` | JWT для мобильного API (см. [docs/api.md](./docs/api.md)). `Key` — минимум 32 символа |
 | `Seed:AdminEmail`, `Seed:AdminPassword`, `Seed:AdminFullName` | Параметры первичного админ-аккаунта |
 
 Полное описание стэка и инфраструктуры — [docs/requirements.md](./docs/requirements.md), [docs/deployment.md](./docs/deployment.md).

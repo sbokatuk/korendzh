@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Korendzh.Mobile.Pages.EntriesPage"
+             Title="Мои часы"
+             BackgroundColor="{StaticResource Surface}">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16,12">
+        <HorizontalStackLayout Grid.Row="0" Spacing="12">
+            <Button Text="Обновить" Clicked="OnRefreshClicked" />
+            <Button Text="Выйти" BackgroundColor="#6b7280" Clicked="OnLogoutClicked" />
+        </HorizontalStackLayout>
+
+        <CollectionView Grid.Row="1" x:Name="EntriesList" Margin="0,12">
+            <CollectionView.EmptyView>
+                <Label Text="Записей нет." HorizontalOptions="Center" VerticalOptions="Center" Opacity="0.5" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Padding="12" Margin="0,0,0,8" CornerRadius="8" BorderColor="Transparent" BackgroundColor="White">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding WorkDate}" FontAttributes="Bold" />
+                            <Label>
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="{Binding Hours}" />
+                                        <Span Text=" ч · " />
+                                        <Span Text="{Binding TaskName}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Text="{Binding CarName}" Opacity="0.6" FontSize="12" />
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="2" Text="+ Новая запись" Clicked="OnCreateClicked" />
+    </Grid>
+
+</ContentPage>

@@ -12,6 +12,8 @@
 - [data-model.md](./data-model.md) — сущности БД (User, Division, TimeEntry, Car, токены, audit log) и их связи.
 - [validation.md](./validation.md) — правила валидации полей и ограничения данных.
 - [notifications.md](./notifications.md) — матрица email и push уведомлений.
+- [api.md](./api.md) — REST API (JWT, `/api/auth/login`, `/api/timeentries`).
+- [mobile.md](./mobile.md) — мобильное приложение (.NET MAUI): структура и что доделать.
 - [requirements.md](./requirements.md) — инфраструктура и технологический стек (Windows Server 2025, IIS, .NET, MS SQL Server, .NET MAUI и т.д.).
 - [deployment.md](./deployment.md) — разворачивание на hoster.by + Plesk: ветка `deploy`, миграции, SSL, бэкапы, scheduled tasks.
 

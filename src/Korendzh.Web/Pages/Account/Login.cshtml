@@ -30,6 +30,11 @@
         </div>
     </form>
 
-    @* Google OAuth: middleware зарегистрирован в Program.cs, но обработчик внешних логинов
-       (Pages/Account/ExternalLogin) ещё не реализован. Включается следующей итерацией. *@
+    @if (Model.GoogleEnabled)
+    {
+        <hr />
+        <form method="post" asp-page="/Account/ExternalLogin" asp-route-provider="Google" asp-route-returnUrl="@Model.ReturnUrl">
+            <button class="btn secondary" type="submit">Войти через Google</button>
+        </form>
+    }
 </div>

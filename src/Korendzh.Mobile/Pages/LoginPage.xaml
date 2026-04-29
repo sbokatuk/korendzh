@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Korendzh.Mobile.Pages.LoginPage"
+             Title="Вход"
+             BackgroundColor="{StaticResource Surface}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,40" Spacing="16">
+            <Label Text="Korendzh" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" />
+            <Label Text="Учёт рабочего времени" HorizontalOptions="Center" Opacity="0.6" />
+
+            <Entry x:Name="EmailEntry" Placeholder="Email" Keyboard="Email" />
+            <Entry x:Name="PasswordEntry" Placeholder="Пароль" IsPassword="True" />
+            <Label x:Name="ErrorLabel" TextColor="#b91c1c" IsVisible="False" />
+
+            <Button x:Name="LoginBtn" Text="Войти" Clicked="OnLoginClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

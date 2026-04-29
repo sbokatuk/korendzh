@@ -2,6 +2,7 @@ using Korendzh.Domain;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
 using Korendzh.Infrastructure.Services;
+using Korendzh.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -48,16 +49,35 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetCsvAsync()
     {
-        var actor = await _users.GetUserAsync(User);
-        if (actor is null) return Forbid();
-        IsAdmin = await _users.IsInRoleAsync(actor, Roles.Admin);
-
-        var divisionId = IsAdmin ? DivisionId : actor.DivisionId;
-        Buckets = await BuildAsync(By, divisionId);
-        var title = $"Статистика {By} {From:yyyy-MM-dd}—{To:yyyy-MM-dd}";
-        var bytes = CsvExporter.Export(Buckets, title);
+        var (buckets, title) = await PrepareExportAsync();
+        var bytes = CsvExporter.Export(buckets, title);
         return File(bytes, "text/csv; charset=utf-8", $"stats-{By}-{From:yyyyMMdd}-{To:yyyyMMdd}.csv");
     }
+
+    public async Task<IActionResult> OnGetXlsxAsync()
+    {
+        var (buckets, title) = await PrepareExportAsync();
+        var bytes = XlsxExporter.Export(buckets, title);
+        return File(bytes, XlsxExporter.ContentType, $"stats-{By}-{From:yyyyMMdd}-{To:yyyyMMdd}.xlsx");
+    }
+
+    private async Task<(List<StatBucket>, string)> PrepareExportAsync()
+    {
+        var actor = await _users.GetUserAsync(User);
+        if (actor is null) throw new UnauthorizedAccessException();
+        IsAdmin = await _users.IsInRoleAsync(actor, Roles.Admin);
+        var divisionId = IsAdmin ? DivisionId : actor.DivisionId;
+        var buckets = await BuildAsync(By, divisionId);
+        var title = $"Статистика: {ByLabel()} за {From:yyyy-MM-dd} — {To:yyyy-MM-dd}";
+        return (buckets, title);
+    }
+
+    private string ByLabel() => By switch
+    {
+        "task" => "часы по задачам",
+        "car" => "часы по автомобилям",
+        _ => "часы по воркерам"
+    };
 
     private async Task<List<StatBucket>> BuildAsync(string by, Guid? divisionId)
     {
