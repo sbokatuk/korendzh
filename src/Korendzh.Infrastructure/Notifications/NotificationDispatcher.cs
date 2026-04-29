@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Korendzh.Domain;
 using Korendzh.Infrastructure.Persistence;
@@ -7,6 +8,15 @@ namespace Korendzh.Infrastructure.Notifications;
 
 public class NotificationDispatcher : INotificationDispatcher
 {
+    /// <summary>
+    /// Не эскейпим не-ASCII (кириллицу и пр.) в JSON, чтобы payload в БД и логах оставался читаемым.
+    /// Безопасно: JSON используется как сырой стораж + рендер через шаблоны, никогда не вставляется в HTML напрямую.
+    /// </summary>
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     private readonly AppDbContext _db;
 
     public NotificationDispatcher(AppDbContext db)
@@ -34,7 +44,7 @@ public class NotificationDispatcher : INotificationDispatcher
             Channel = channel,
             TemplateTag = templateTag,
             EventKey = eventKey,
-            PayloadJson = JsonSerializer.Serialize(payload),
+            PayloadJson = JsonSerializer.Serialize(payload, JsonOpts),
             Status = NotificationStatus.Queued,
             NextAttemptAt = DateTime.UtcNow,
         };
