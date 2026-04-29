@@ -6,10 +6,14 @@
 
 ## Содержание
 
-- [system-overview.md](./system-overview.md) — что делает система: роли, сценарии, статистика.
+- [system-overview.md](./system-overview.md) — что делает система: роли, сценарии, lifecycle, безопасность.
+- [user-stories.md](./user-stories.md) — полный перечень юзеркейсов (US-W*, US-M*, US-A*, US-S*).
 - [roles-permissions.md](./roles-permissions.md) — матрица прав Worker / Manager / Admin.
-- [data-model.md](./data-model.md) — сущности БД и их связи.
+- [data-model.md](./data-model.md) — сущности БД (User, Division, TimeEntry, Car, токены, audit log) и их связи.
+- [validation.md](./validation.md) — правила валидации полей и ограничения данных.
+- [notifications.md](./notifications.md) — матрица email и push уведомлений.
 - [requirements.md](./requirements.md) — инфраструктура и технологический стек (Windows Server 2025, IIS, .NET, MS SQL Server, .NET MAUI и т.д.).
+- [deployment.md](./deployment.md) — разворачивание на hoster.by + Plesk: ветка `deploy`, миграции, SSL, бэкапы, scheduled tasks.
 
 ## Соглашения
 

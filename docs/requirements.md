@@ -1,10 +1,21 @@
 # Технические требования
 
-Этот документ описывает **инфраструктуру и технологический стек**. Что именно делает система — см. [system-overview.md](./system-overview.md). Модель данных — [data-model.md](./data-model.md). Роли и права — [roles-permissions.md](./roles-permissions.md).
+Этот документ описывает **инфраструктуру и технологический стек**. Что именно делает система — см. [system-overview.md](./system-overview.md). Модель данных — [data-model.md](./data-model.md). Роли и права — [roles-permissions.md](./roles-permissions.md). Как разворачивается — [deployment.md](./deployment.md).
+
+## Хостинг
+
+- **Провайдер:** hoster.by
+- **Хост:** `w14.hoster.by`
+- **Панель управления:** Plesk (Windows-edition)
+- **Авто-деплой:** Plesk Git extension, ветка `deploy` репозитория `sbokatuk/korendzh` в `\httpdocs`
+
+Подробности — в [deployment.md](./deployment.md).
 
 ## Доменное имя
 
 - **Домен:** [бокатюк.бел](http://бокатюк.бел)
+- **Punycode:** `xn--80aaaifc7a8azal.xn--90ais`
+- **SSL:** Let's Encrypt через Plesk
 
 ## Серверная инфраструктура
 

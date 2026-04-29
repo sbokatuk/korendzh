@@ -1,0 +1,181 @@
+# Деплоймент
+
+Документ описывает разворачивание системы (веб + БД) на хостинге **hoster.by** под управлением **Plesk** (Windows Server 2025 + IIS 10.0). Мобильное приложение — отдельный канал дистрибуции (App Store / Google Play).
+
+Связано с [requirements.md](./requirements.md) (стек), [data-model.md](./data-model.md) (сидинг), [system-overview.md](./system-overview.md) (безопасность).
+
+## Целевая инфраструктура
+
+| Параметр | Значение |
+|---|---|
+| Хостинг-провайдер | hoster.by |
+| Хост | `w14.hoster.by` |
+| Панель управления | Plesk |
+| ОС | Windows Server 2025 |
+| Веб-сервер | IIS 10.0 (через Plesk) |
+| Корень сайта | `\httpdocs` |
+| Домен | `бокатюк.бел` (Punycode: `xn--80aaaifc7a8azal.xn--90ais`) |
+
+## Репозиторий и режим деплоя
+
+- **Источник кода:** GitHub, репозиторий `sbokatuk/korendzh` (`https://github.com/sbokatuk/korendzh`).
+- **Тип репозитория в Plesk:** «Удалённый репозиторий» — Plesk **получает** код по push-сигналу из GitHub.
+- **Режим:** автоматическое развёртывание. На каждый push в целевую ветку Plesk обновляет `\httpdocs`.
+- **Целевая папка:** `\httpdocs` (см. скриншот настройки).
+
+### Стратегия веток
+
+Чтобы не пушить исходники в продакшн, используется отдельная **ветка артефактов**:
+
+- `main` — исходники, разработка идёт здесь, Plesk **не подписан** на эту ветку.
+- `deploy` (или `release/prod`) — содержит уже собранный `dotnet publish` артефакт. Plesk подписан на эту ветку и кладёт её содержимое прямо в `\httpdocs`.
+
+Ветка `deploy` обновляется через **GitHub Actions** при пуше тега или вручную (workflow_dispatch). Преимущества по сравнению со сборкой на сервере:
+
+- сервер не держит .NET SDK и инструменты сборки;
+- неудачная сборка не ломает прод (артефакт пушится в `deploy` только после успешного билда);
+- быстрый rollback — `git revert` в `deploy` либо переключение на предыдущий тег.
+
+### Альтернатива: server-side build
+
+Если SDK на сервере доступен и приемлем по нагрузке, в Plesk можно включить «Дополнительные действия развертывания» и прописать:
+
+```
+dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release -o publish
+```
+
+Затем настроить, чтобы IIS-приложение указывало на папку `publish`. Этот вариант проще, но менее надёжен — зависит от состояния SDK на сервере и удлиняет деплой.
+
+## Подготовка ASP.NET Core под IIS
+
+1. **Microsoft .NET Hosting Bundle** установлен на сервере (выбирается версия под целевой `.NET 8/9/10`). Без него ANCM не запустит приложение.
+2. **`web.config`** — генерируется при `dotnet publish`. Должен содержать:
+   - `aspNetCore` handler;
+   - `processPath="dotnet"`, `arguments=".\Korendzh.Web.dll"`;
+   - `hostingModel="InProcess"` (производительность) либо `OutOfProcess` (при необходимости долгих запросов и WebSocket-нагрузки);
+   - `stdoutLogEnabled="false"` в проде, `true` — только при разовой диагностике.
+3. **App Pool** в Plesk: «No Managed Code» (для .NET Core), пользователь — IIS AppPool, права на чтение `\httpdocs` и запись в `App_Data` / `logs`.
+
+## Конфигурация и секреты
+
+Хранение по слоям, **никогда не коммитим продакшен-секреты в Git**:
+
+| Что | Где |
+|---|---|
+| Несекретные дефолты | `appsettings.json` (в репо) |
+| Несекретные прод-настройки | `appsettings.Production.json` (в репо или в `deploy` ветке) |
+| Секреты (DB, SMTP, Google OAuth, APNS/FCM) | Plesk → Applications → **Application Settings** (env vars) |
+| Локальные секреты разработчика | .NET User Secrets (только dev-машина) |
+
+Connection string и API-ключи задаются через переменные окружения в Plesk; в `IConfiguration` они доступны прозрачно. Например:
+
+- `ConnectionStrings__Default`
+- `Smtp__Host`, `Smtp__User`, `Smtp__Password`
+- `Google__ClientId`, `Google__ClientSecret`
+- `Push__Apns__KeyId`, `Push__Fcm__ServerKey`
+
+## База данных (MSSQL)
+
+- **СУБД:** Microsoft SQL Server 2019 (см. [requirements.md](./requirements.md)).
+- **Где живёт:** уточняется в тарифе hoster.by. Возможные варианты — встроенный MSSQL Plesk-плана, отдельный managed-инстанс, либо собственный SQL Server. Для прод-нагрузки рекомендуется не Express (ограничение 10 ГБ).
+- **Создание БД:** через Plesk → Databases → Add Database. Имя БД, пользователь и пароль фиксируются в Application Settings (см. выше).
+- **Сетевой доступ:** только с веб-сервера; внешний доступ закрыт. Для административных задач — RDP/Plesk либо временный whitelist.
+
+### Миграции схемы
+
+Используется **EF Core Migrations**. Стратегия — **migrate-on-startup** для упрощения деплоя:
+
+```csharp
+using (var scope = app.Services.CreateScope()) {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+```
+
+Это запускает применение миграций при старте процесса. Подходит, пока миграции быстрые и не требуют ручного контроля.
+
+Если потребуется большая миграция (изменение типа колонки на огромной таблице, переиндексирование) — выкатывается отдельным шагом через `dotnet ef migrations bundle` и SQL-скрипт, выполняемый в окно обслуживания.
+
+### Сидинг первого админа
+
+См. [data-model.md](./data-model.md), раздел «Сидинг при деплое». Один из подходов:
+
+- В коде миграций (или `IHostedService` при первом старте) проверяется наличие админа.
+- Если нет — создаётся аккаунт с email из переменной окружения `Seed__AdminEmail` и временным паролем из `Seed__AdminPassword` (либо генерируется и пишется в лог разово).
+- При первом входе админ обязан сменить пароль.
+
+## Домен и SSL
+
+- **Домен:** `бокатюк.бел`.
+- **DNS:** A-запись на IP сервера hoster.by. У некоторых регистраторов `.бел` нужно добавлять Punycode (`xn--80aaaifc7a8azal.xn--90ais`).
+- **HTTPS:** Plesk → SSL/TLS Certificates → **Let's Encrypt**. ACME-клиент Plesk корректно работает с IDN — выдаёт сертификат на Punycode-имя, IIS отдаёт его и для Cyrillic-варианта.
+- **Принудительный HTTPS:** включить через Plesk («Permanent SEO-safe 301 redirect») либо через `URL Rewrite` в `web.config`.
+- **HSTS:** включить заголовок `Strict-Transport-Security` после успешной выдачи сертификата.
+
+## Email и push
+
+- **SMTP для транзакционных писем** (инвайты, сброс пароля, нотификации): внешний провайдер (например, hoster.by SMTP с лимитами, либо специализированный сервис типа Mailgun / SendGrid / Postmark — выбор фиксируется на этапе деплоя). Креды — в Plesk Application Settings.
+- **APNS** (iOS push): сертификат / Auth Key из Apple Developer Account. Загружается в Plesk Application Settings или в защищённый файл вне `\httpdocs`.
+- **FCM** (Android push): Server Key / service account JSON из Firebase Console. Аналогично — в защищённое хранилище.
+
+См. [notifications.md](./notifications.md) для бизнес-требований к уведомлениям.
+
+## Регулярные задачи
+
+Используется **Plesk Scheduled Tasks** (под капотом — Windows Task Scheduler):
+
+- Очистка просроченных `InvitationToken` и `PasswordResetToken` — раз в час.
+- Чистка/архивирование `AuditLog` старше N лет — раз в сутки.
+- Триггер ретрая для `NotificationLog.Status = Failed` — каждые 5 минут.
+
+Реализация — отдельный консольный артефакт (`Korendzh.Jobs.exe`), вызываемый по расписанию. Альтернатива — `BackgroundService` внутри веб-приложения, но при рестарте IIS он простаивает, поэтому критичные джобы лучше на Task Scheduler.
+
+## Бэкапы
+
+- **Plesk Backup Manager** настроен на **ежедневный** бэкап:
+  - файлы (`\httpdocs`, конфиги, ключи push-провайдеров);
+  - БД MSSQL.
+- **Хранилище:** локально + удалённое (FTP/S3 — конфигурируется отдельно). Минимум одна копия вне сервера.
+- **Retention:** 14 ежедневных + 4 еженедельных + 3 ежемесячных (рекомендация; уточняется по тарифу hoster.by).
+- **Тест восстановления:** раз в квартал на staging-окружении.
+- **Не покрывается Plesk-бэкапом:** значения переменных окружения, отдельно загруженные сертификаты — фиксируются в защищённом хранилище проектной документации (Vault / 1Password / KeePass — выбор команды).
+
+## CI/CD: GitHub Actions
+
+Минимальный workflow (`.github/workflows/deploy.yml`):
+
+1. Триггер: push тега `v*` в `main` либо ручной запуск.
+2. `dotnet restore`, `dotnet test`.
+3. `dotnet publish -c Release -o publish` для проекта веб-приложения.
+4. Коммит содержимого `publish/` в ветку `deploy` (через action типа `peaceiris/actions-gh-pages` или `git push --force` от bot-аккаунта).
+5. Plesk слышит push и обновляет `\httpdocs` автоматически.
+
+Опционально: smoke-тест после деплоя (curl на health-эндпоинт), Telegram/Slack уведомление о результате.
+
+## Чеклист первого деплоя
+
+1. На сервере установлен Microsoft .NET Hosting Bundle нужной версии.
+2. В Plesk создана БД MSSQL и пользователь с правами на неё.
+3. В Plesk → Application Settings заданы все переменные окружения (DB, SMTP, Google OAuth, APNS/FCM, `Seed__AdminEmail`).
+4. Репозиторий подключён, режим — auto, ветка — `deploy`.
+5. Ветка `deploy` собрана через GitHub Actions из тега `v0.1.0`.
+6. Plesk показал «Deployed successfully», в `\httpdocs` лежит `Korendzh.Web.dll` и `web.config`.
+7. Запущен сайт — миграции EF Core отработали, в БД появились таблицы и сид-админ.
+8. Сертификат Let's Encrypt выпущен на `бокатюк.бел`.
+9. Принудительный редирект HTTP → HTTPS включён.
+10. В Plesk Backup Manager настроено расписание и удалённое хранилище.
+11. В Scheduled Tasks заведены джобы очистки токенов и ретрая нотификаций.
+12. Сделан тестовый логин админом, тестовое создание менеджера, проверена доставка email-инвайта.
+
+## Мобильное приложение (краткая заметка)
+
+`.NET MAUI`-приложение собирается **отдельно** от веба и деплоится в магазины:
+
+- **iOS** — через App Store Connect (требуется Apple Developer Program). Сборка через GitHub Actions runner с macOS либо локальная.
+- **Android** — через Google Play Console (Internal testing → Closed → Production).
+- API endpoints мобильного клиента указывают на `https://бокатюк.бел`.
+- Мобильное приложение не публикуется на хостинг hoster.by — там только веб и API.
+
+---
+
+*Документ обновлён: 2026-04-29*
