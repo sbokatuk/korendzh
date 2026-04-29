@@ -7,20 +7,26 @@
     <RootNamespace>Korendzh.Infrastructure</RootNamespace>
   </PropertyGroup>
 
+  <!--
+    FrameworkReference Microsoft.AspNetCore.App подтягивает Identity / Hosting /
+    Configuration / Options.ConfigurationExtensions / EF Core base — без этого в class library
+    нет AddIdentity и Configure<T>(IConfigurationSection).
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Korendzh.Domain\Korendzh.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- AddEntityFrameworkStores — в NuGet, не в shared framework. -->
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.10" />
+    <!-- EF Core SQL Server provider. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
-    <PackageReference Include="MailKit" Version="4.8.0" />
+    <!-- MailKit 4.13.0+ закрывает GHSA-9j88-vvj5-vhgr. -->
+    <PackageReference Include="MailKit" Version="4.13.0" />
   </ItemGroup>
 
 </Project>
