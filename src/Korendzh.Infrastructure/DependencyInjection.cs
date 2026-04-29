@@ -39,6 +39,11 @@ public static class DependencyInjection
                 options.Password.RequireNonAlphanumeric = false;
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedEmail = false;
+
+                // По умолчанию Identity режет username, если в нём есть символы вне латиницы/цифр/-_.+@.
+                // У нас username = email, и домен бокатюк.бел содержит кириллицу. Пустая строка отключает
+                // проверку допустимых символов; уникальность email всё равно гарантируется отдельно.
+                options.User.AllowedUserNameCharacters = string.Empty;
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
