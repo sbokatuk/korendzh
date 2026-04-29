@@ -8,6 +8,7 @@ using Korendzh.Web.Seeding;
 using Korendzh.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -31,6 +32,16 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 builder.Services.AddScoped<DivisionScope>();
+
+// DataProtection: ключи cookie/antiforgery/Identity-токенов хранятся в файловой папке, чтобы
+// переживать рестарт App Pool. Без этого после каждого recycle все логины и формы инвалидируются.
+// Папка App_Data/dp-keys создаётся автоматически. AppPool identity должен иметь на неё право записи.
+var dpKeysDir = new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "dp-keys"));
+dpKeysDir.Create();
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(dpKeysDir)
+    .SetApplicationName("Korendzh");
 
 builder.Services.AddKorendzhInfrastructure(builder.Configuration);
 
