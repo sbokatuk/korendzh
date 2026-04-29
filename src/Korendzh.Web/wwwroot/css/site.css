@@ -66,6 +66,26 @@ form .row > .field { flex: 1; }
 .btn.danger:hover { background: #991b1b; }
 
 .actions { display: flex; gap: 0.5rem; }
+
+/* Chip-кнопки для быстрого ввода (часы, последние авто). */
+.quick-buttons, .recent-cars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.chip {
+    background: #f3f4f6;
+    color: #1f2937;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.1s ease, border-color 0.1s ease;
+}
+.chip:hover { background: #e5e7eb; border-color: #9ca3af; }
+.chip:active { background: #d1d5db; }
 .field-validation-error { color: #b91c1c; font-size: 0.85rem; }
 .input-validation-error { border-color: #b91c1c; }
 

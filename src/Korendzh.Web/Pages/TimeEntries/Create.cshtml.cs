@@ -37,6 +37,10 @@ public class CreateModel : PageModel
     public bool IsManagerOrAdmin { get; private set; }
     public List<AppUser> Workers { get; private set; } = new();
 
+    /// <summary>Последние 3 уникальных автомобиля из табелей текущего пользователя.</summary>
+    public List<RecentCar> RecentCars { get; private set; } = new();
+    public record RecentCar(string Name, string? LicensePlate);
+
     public class InputModel
     {
         public Guid? WorkerId { get; set; }
@@ -66,6 +70,7 @@ public class CreateModel : PageModel
         if (actor is null) return Forbid();
         await LoadWorkers(actor);
         if (!IsManagerOrAdmin) Input.WorkerId = actor.Id;
+        await LoadRecentCars(actor.Id);
         return Page();
     }
 
@@ -75,6 +80,7 @@ public class CreateModel : PageModel
         if (actor is null) return Forbid();
 
         await LoadWorkers(actor);
+        await LoadRecentCars(actor.Id);
 
         var workerId = Input.WorkerId ?? actor.Id;
         if (!await _scope.CanAccessWorkerAsync(actor, workerId))
@@ -130,5 +136,39 @@ public class CreateModel : PageModel
         {
             Workers = await _db.Users.Where(u => u.IsActive && u.DivisionId == actor.DivisionId).OrderBy(u => u.FullName).ToListAsync();
         }
+    }
+
+    /// <summary>
+    /// Последние 3 уникальных автомобиля, использованных в табеле текущего пользователя.
+    /// Берём 50 последних записей с авто, дедуплицируем по CarId, берём 3 свежих.
+    /// </summary>
+    private async Task LoadRecentCars(Guid actorId)
+    {
+        var recent = await _db.TimeEntries
+            .AsNoTracking()
+            .Where(e => e.WorkerId == actorId && e.CarId != null)
+            .OrderByDescending(e => e.CreatedAt)
+            .Select(e => new { e.CarId, e.LicensePlate })
+            .Take(50)
+            .ToListAsync();
+
+        var distinct = recent
+            .GroupBy(x => x.CarId!.Value)
+            .Select(g => new { CarId = g.Key, LicensePlate = g.First().LicensePlate })
+            .Take(3)
+            .ToList();
+
+        if (distinct.Count == 0) return;
+
+        var carIds = distinct.Select(x => x.CarId).ToList();
+        var carNames = await _db.Cars
+            .AsNoTracking()
+            .Where(c => carIds.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, c => c.Name);
+
+        RecentCars = distinct
+            .Where(x => carNames.ContainsKey(x.CarId))
+            .Select(x => new RecentCar(carNames[x.CarId], x.LicensePlate))
+            .ToList();
     }
 }

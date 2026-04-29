@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Korendzh.Domain;
 using Korendzh.Infrastructure.Auth;
 using Korendzh.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -74,37 +75,47 @@ public class LoginModel : PageModel
         // Чтобы найти пользователя независимо от того, в какой форме email хранится в БД,
         // ищем сначала по введённому значению, потом по нормализованному ASCII (Punycode),
         // потом по Unicode-форме (на случай если в БД хранится исходник).
-        var asciiEmail = EmailNormalizer.ToAscii(Input.Email);
-        var user = await _users.FindByEmailAsync(Input.Email)
+        // Input.Email и Input.Password гарантированно не null после валидации ModelState ([Required]).
+        var inputEmail = Input.Email ?? string.Empty;
+        var inputPassword = Input.Password ?? string.Empty;
+        var asciiEmail = EmailNormalizer.ToAscii(inputEmail);
+        var user = await _users.FindByEmailAsync(inputEmail)
                    ?? await _users.FindByEmailAsync(asciiEmail);
         if (user is null)
         {
-            _log.LogInformation("Login: user not found. Tried '{InputEmail}' and '{Ascii}'", Input.Email, asciiEmail);
+            _log.LogInformation("Login: user not found. Tried '{InputEmail}' and '{Ascii}'", inputEmail, asciiEmail);
             ErrorMessage = "Неверный email или пароль.";
             return Page();
         }
         if (!user.IsActive)
         {
-            _log.LogInformation("Login: user '{Email}' found but IsActive=false", Input.Email);
+            _log.LogInformation("Login: user '{Email}' found but IsActive=false", inputEmail);
             ErrorMessage = "Неверный email или пароль.";
             return Page();
         }
 
         // Для диагностики проверим пароль отдельно — отделит «не тот пароль» от других сценариев.
-        var passwordOk = await _users.CheckPasswordAsync(user, Input.Password);
+        var passwordOk = await _users.CheckPasswordAsync(user, inputPassword);
         var lockedOut = await _users.IsLockedOutAsync(user);
         _log.LogInformation(
             "Login: user '{Email}' found. PasswordCheck={PwOk}, LockedOut={Locked}, AccessFailedCount={AFC}, EmailConfirmed={EC}, HasPassword={HP}, PasswordLen={PL}",
-            Input.Email, passwordOk, lockedOut, user.AccessFailedCount, user.EmailConfirmed,
-            await _users.HasPasswordAsync(user), Input.Password?.Length ?? 0);
+            inputEmail, passwordOk, lockedOut, user.AccessFailedCount, user.EmailConfirmed,
+            await _users.HasPasswordAsync(user), inputPassword.Length);
 
-        var result = await _signIn.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+        var result = await _signIn.PasswordSignInAsync(user, inputPassword, Input.RememberMe, lockoutOnFailure: true);
         _log.LogInformation("Login result for '{Email}': Succeeded={S}, IsLockedOut={L}, IsNotAllowed={NA}, RequiresTwoFactor={2FA}",
-            Input.Email, result.Succeeded, result.IsLockedOut, result.IsNotAllowed, result.RequiresTwoFactor);
+            inputEmail, result.Succeeded, result.IsLockedOut, result.IsNotAllowed, result.RequiresTwoFactor);
 
         if (result.Succeeded)
         {
-            return LocalRedirect(returnUrl ?? "/Dashboard");
+            if (!string.IsNullOrEmpty(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+            // Воркер сразу попадает на форму ввода часов; менеджер/админ — в дашборд.
+            var roles = await _users.GetRolesAsync(user);
+            var isPrivileged = roles.Contains(Roles.Admin) || roles.Contains(Roles.Manager);
+            return LocalRedirect(isPrivileged ? "/Dashboard" : "/TimeEntries/Create");
         }
         if (result.IsLockedOut)
         {

@@ -1,6 +1,7 @@
 using Korendzh.Domain;
 using Korendzh.Infrastructure.Notifications;
 using Korendzh.Tests.Helpers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Korendzh.Tests;
@@ -11,7 +12,7 @@ public class NotificationDispatcherTests
     public async Task EnqueueAsync_creates_queued_entry_with_payload()
     {
         using var db = TestDbContextFactory.Create();
-        var sut = new NotificationDispatcher(db);
+        var sut = new NotificationDispatcher(db, NullLogger<NotificationDispatcher>.Instance);
         var userId = Guid.NewGuid();
 
         await sut.EnqueueAsync(userId, NotificationChannel.Email, NotificationTemplates.InviteCreated,
@@ -29,7 +30,7 @@ public class NotificationDispatcherTests
     public async Task EnqueueAsync_is_idempotent_by_event_key()
     {
         using var db = TestDbContextFactory.Create();
-        var sut = new NotificationDispatcher(db);
+        var sut = new NotificationDispatcher(db, NullLogger<NotificationDispatcher>.Instance);
         var userId = Guid.NewGuid();
 
         await sut.EnqueueAsync(userId, NotificationChannel.Email, "tag", "evt:1", new { a = 1 });

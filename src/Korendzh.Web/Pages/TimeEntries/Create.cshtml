@@ -32,6 +32,12 @@
         <div class="field">
             <label asp-for="Input.Hours">Часы</label>
             <input asp-for="Input.Hours" type="number" step="0.25" min="0.25" max="24" required />
+            <div class="quick-buttons" data-target="Input.Hours" style="margin-top:6px">
+                @for (int h = 1; h <= 10; h++)
+                {
+                    <button type="button" class="chip" data-value="@h">@h</button>
+                }
+            </div>
             <span asp-validation-for="Input.Hours"></span>
         </div>
     </div>
@@ -47,6 +53,19 @@
             <label asp-for="Input.CarName">Автомобиль</label>
             <input asp-for="Input.CarName" type="text" maxlength="100" list="cars-datalist" autocomplete="off" />
             <datalist id="cars-datalist"></datalist>
+            @if (Model.RecentCars.Count > 0)
+            {
+                <div class="recent-cars" style="margin-top:6px">
+                    @foreach (var c in Model.RecentCars)
+                    {
+                        <button type="button" class="chip"
+                                data-name="@c.Name"
+                                data-plate="@(c.LicensePlate ?? "")">
+                            @c.Name@(string.IsNullOrEmpty(c.LicensePlate) ? "" : " · " + c.LicensePlate)
+                        </button>
+                    }
+                </div>
+            }
         </div>
         <div class="field">
             <label asp-for="Input.LicensePlate">Госномер</label>
@@ -120,5 +139,29 @@
             carInput.addEventListener('change', tryAutoFillPlate);
             carInput.addEventListener('blur', tryAutoFillPlate);
         })();
+
+        // Быстрые кнопки часов (1..10).
+        document.querySelectorAll('.quick-buttons').forEach(group => {
+            const targetName = group.dataset.target;
+            const target = document.querySelector(`[name="${targetName}"]`);
+            if (!target) return;
+            group.querySelectorAll('button.chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    target.value = btn.dataset.value;
+                    target.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+            });
+        });
+
+        // Быстрый выбор последних автомобилей.
+        document.querySelectorAll('.recent-cars button.chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const carInput = document.querySelector('input[name="Input.CarName"]');
+                const plateInput = document.querySelector('input[name="Input.LicensePlate"]');
+                if (carInput) carInput.value = btn.dataset.name;
+                if (plateInput) plateInput.value = btn.dataset.plate || '';
+                if (carInput) carInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
     </script>
 }
