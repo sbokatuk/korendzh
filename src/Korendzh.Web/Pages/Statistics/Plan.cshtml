@@ -1,0 +1,104 @@
+@page
+@model Korendzh.Web.Pages.Statistics.PlanModel
+@{
+    ViewData["Title"] = "План vs Факт";
+}
+<h1>План vs Факт</h1>
+
+<form method="get" class="card">
+    <div class="row">
+        <div class="field">
+            <label>От</label>
+            <input type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field">
+            <label>До</label>
+            <input type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+        </div>
+        @if (Model.IsAdmin)
+        {
+            <div class="field">
+                <label>Подразделение</label>
+                <select name="divisionId">
+                    <option value="">— все —</option>
+                    @foreach (var d in Model.Divisions)
+                    {
+                        <option value="@d.Id" selected="@(Model.DivisionId == d.Id)">@d.Name</option>
+                    }
+                </select>
+            </div>
+        }
+        <div class="field">
+            <label>Воркер</label>
+            <select name="workerId">
+                <option value="">— все —</option>
+                @foreach (var w in Model.WorkerOptions)
+                {
+                    <option value="@w.Id" selected="@(Model.WorkerId == w.Id)">@w.FullName</option>
+                }
+            </select>
+        </div>
+        <div class="field" style="align-self:end">
+            <button class="btn" type="submit">Применить</button>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <canvas id="planChart" height="120"></canvas>
+</div>
+
+<table style="max-width:520px">
+    <thead><tr><th>Метрика</th><th>Значение</th></tr></thead>
+    <tbody>
+        <tr><td>Запланировано часов</td><td>@Model.TotalPlanned.ToString("0.##")</td></tr>
+        <tr><td>Отработано часов</td><td>@Model.TotalActual.ToString("0.##")</td></tr>
+        <tr>
+            <td>Выполнение, %</td>
+            <td>@(Model.TotalPlanned > 0 ? ((double)(Model.TotalActual / Model.TotalPlanned * 100m)).ToString("0.#") : "—")</td>
+        </tr>
+        <tr><td>Разница (факт − план)</td><td>@((Model.TotalActual - Model.TotalPlanned).ToString("0.##"))</td></tr>
+    </tbody>
+</table>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script>
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Days.Select(d => d.Date.ToString("yyyy-MM-dd"))));
+        const planned = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Days.Select(d => (double)d.PlannedHours)));
+        const actual  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Days.Select(d => (double)d.ActualHours)));
+
+        new Chart(document.getElementById('planChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'План',
+                        data: planned,
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                        borderWidth: 2,
+                        tension: 0.2,
+                        fill: false
+                    },
+                    {
+                        label: 'Факт',
+                        data: actual,
+                        borderColor: 'rgba(29, 78, 216, 1)',
+                        backgroundColor: 'rgba(29, 78, 216, 0.15)',
+                        borderWidth: 2,
+                        tension: 0.2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Часы' } } }
+            }
+        });
+    </script>
+}

@@ -1,0 +1,65 @@
+@page
+@model Korendzh.Web.Pages.Plan.BulkModel
+@{
+    ViewData["Title"] = "Заполнить план по шаблону";
+}
+<h1>Заполнить план по шаблону</h1>
+<form method="post" class="card" style="max-width:680px">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+
+    <div class="field">
+        <label>Воркеры</label>
+        @if (Model.AvailableWorkers.Count == 1 && !Model.IsManagerOrAdmin)
+        {
+            <input type="hidden" name="WorkerIds" value="@Model.AvailableWorkers[0].Id" />
+            <p class="muted">Применяется к вашему плану (@Model.AvailableWorkers[0].FullName).</p>
+        }
+        else
+        {
+            <select name="WorkerIds" multiple size="@Math.Min(Model.AvailableWorkers.Count, 8)" required style="min-height:140px">
+                @foreach (var w in Model.AvailableWorkers)
+                {
+                    <option value="@w.Id" selected="@(Model.PreselectedWorkerId == w.Id)">@w.FullName @(string.IsNullOrEmpty(w.Email) ? "" : $"· {w.Email}")</option>
+                }
+            </select>
+            <small class="muted">Удерживайте Ctrl / Cmd, чтобы выбрать нескольких.</small>
+        }
+    </div>
+
+    <div class="row">
+        <div class="field">
+            <label asp-for="Input.From">От</label>
+            <input asp-for="Input.From" type="date" required />
+        </div>
+        <div class="field">
+            <label asp-for="Input.To">До</label>
+            <input asp-for="Input.To" type="date" required />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="field">
+            <label asp-for="Input.Pattern">График</label>
+            <select asp-for="Input.Pattern" required>
+                <option value="StandardWeek">5/2 (Пн–Пт)</option>
+                <option value="SixDayWeek">6/1 (Пн–Сб)</option>
+                <option value="TwoTwoShift">2/2 сменный</option>
+                <option value="Daily">Каждый день</option>
+            </select>
+        </div>
+        <div class="field">
+            <label asp-for="Input.HoursPerDay">Часов в день</label>
+            <input asp-for="Input.HoursPerDay" type="number" step="0.25" min="0.25" max="24" required />
+        </div>
+    </div>
+
+    <div class="field">
+        <label><input type="checkbox" asp-for="Input.ReplaceExisting" /> Заменить существующие записи плана в этом диапазоне</label>
+        <small class="muted">Если включено: все записи в диапазоне сначала удаляются, затем расставляются по шаблону. Если выключено: рабочие дни шаблона перекрывают совпадающие даты, остальные сохраняются.</small>
+    </div>
+
+    <div class="actions">
+        <button class="btn" type="submit">Применить</button>
+        <a class="btn secondary" asp-page="/Plan/Index">Отмена</a>
+    </div>
+</form>

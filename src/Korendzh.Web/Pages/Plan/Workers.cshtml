@@ -1,0 +1,30 @@
+@page
+@model Korendzh.Web.Pages.Plan.WorkersModel
+@{
+    ViewData["Title"] = "Планы — список воркеров";
+}
+<div class="toolbar">
+    <h1>Планы воркеров</h1>
+    <a class="btn" asp-page="/Plan/Bulk">Заполнить по шаблону</a>
+</div>
+
+<table>
+    <thead><tr><th>ФИО</th><th>Email</th><th>Подразделение</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var w in Model.Items)
+    {
+        <tr>
+            <td>@w.FullName</td>
+            <td>@w.Email</td>
+            <td>@(Model.DivisionNames.GetValueOrDefault(w.DivisionId ?? Guid.Empty) ?? "—")</td>
+            <td class="actions">
+                <a class="btn secondary" asp-page="/Plan/Index" asp-route-workerId="@w.Id">План</a>
+            </td>
+        </tr>
+    }
+    @if (!Model.Items.Any())
+    {
+        <tr><td colspan="4" class="muted">Воркеров пока нет.</td></tr>
+    }
+    </tbody>
+</table>

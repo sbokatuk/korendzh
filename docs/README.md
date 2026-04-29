@@ -16,6 +16,7 @@
 - [roles-permissions.md](./roles-permissions.md) — матрица прав Worker / Manager / Admin.
 - [data-model.md](./data-model.md) — сущности БД (User, Division, TimeEntry, Car, токены, audit log) и их связи.
 - [migrations.md](./migrations.md) — повседневный воркфлоу EF Core миграций (как менять схему без пересоздания БД).
+- [plan.md](./plan.md) — план загрузки: календарь часов, шаблоны графиков, статистика «План vs Факт».
 - [validation.md](./validation.md) — правила валидации полей и ограничения данных.
 - [notifications.md](./notifications.md) — матрица email и push уведомлений.
 - [api.md](./api.md) — REST API (JWT, `/api/auth/login`, `/api/timeentries`).

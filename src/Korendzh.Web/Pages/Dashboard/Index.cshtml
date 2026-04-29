@@ -7,11 +7,14 @@
 <p>Вы вошли как <strong>@Model.Role</strong>.</p>
 <div class="actions" style="margin-top:16px">
     <a class="btn" asp-page="/TimeEntries/Index">Учёт часов</a>
+    <a class="btn secondary" asp-page="/Plan/Index">Мой план</a>
     @if (Model.IsManagerOrAdmin)
     {
         <a class="btn secondary" asp-page="/Workers/Index">Воркеры</a>
+        <a class="btn secondary" asp-page="/Plan/Workers">Планы</a>
         <a class="btn secondary" asp-page="/Cars/Index">Автомобили</a>
         <a class="btn secondary" asp-page="/Statistics/Index">Статистика</a>
+        <a class="btn secondary" asp-page="/Statistics/Plan">План vs Факт</a>
     }
     @if (Model.IsAdmin)
     {

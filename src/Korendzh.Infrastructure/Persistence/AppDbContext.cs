@@ -1,5 +1,6 @@
 using Korendzh.Domain;
 using Korendzh.Domain.Cms;
+using Korendzh.Domain.Plan;
 using Korendzh.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+
+    // Учёт планов.
+    public DbSet<PlanEntry> PlanEntries => Set<PlanEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

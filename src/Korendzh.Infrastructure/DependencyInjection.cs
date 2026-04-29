@@ -4,6 +4,7 @@ using Korendzh.Infrastructure.Cms;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Notifications;
 using Korendzh.Infrastructure.Persistence;
+using Korendzh.Infrastructure.Plan;
 using Korendzh.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +66,9 @@ public static class DependencyInjection
         // CMS — публичный лендинг.
         services.AddScoped<ICmsService, CmsService>();
         services.AddScoped<IMediaService, MediaService>();
+
+        // План загрузки.
+        services.AddScoped<IPlanService, PlanService>();
 
         return services;
     }
