@@ -38,7 +38,64 @@ public class DataSeeder
     {
         await SeedRoles();
         await SeedAdmin(ct);
+        await ResetAdminPasswordIfRequested();
         await SeedCmsDefaults(ct);
+    }
+
+    /// <summary>
+    /// Recovery-механика: если в БД уже есть пользователь с email = Seed:AdminEmail,
+    /// и поднят флаг Seed:ResetAdminPasswordOnStartup=true — переустанавливаем ему пароль
+    /// из текущего Seed:AdminPassword. Используется однократно для восстановления доступа,
+    /// после чего флаг нужно вернуть в false и снова рестартнуть приложение.
+    /// </summary>
+    private async Task ResetAdminPasswordIfRequested()
+    {
+        var enabled = string.Equals(_config["Seed:ResetAdminPasswordOnStartup"], "true",
+            StringComparison.OrdinalIgnoreCase);
+        if (!enabled) return;
+
+        var email = _config["Seed:AdminEmail"];
+        var password = _config["Seed:AdminPassword"];
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            _log.LogWarning("Seed:ResetAdminPasswordOnStartup=true, но Seed:AdminEmail/AdminPassword не заданы — пропускаем.");
+            return;
+        }
+
+        var user = await _users.FindByEmailAsync(email);
+        if (user is null)
+        {
+            _log.LogWarning("Seed:ResetAdminPasswordOnStartup=true, но пользователь {Email} не найден — пропускаем.", email);
+            return;
+        }
+
+        if (await _users.HasPasswordAsync(user))
+        {
+            var removed = await _users.RemovePasswordAsync(user);
+            if (!removed.Succeeded)
+            {
+                _log.LogError("Не удалось снять старый пароль для {Email}: {Errors}", email,
+                    string.Join("; ", removed.Errors.Select(e => e.Description)));
+                return;
+            }
+        }
+        var added = await _users.AddPasswordAsync(user, password);
+        if (!added.Succeeded)
+        {
+            _log.LogError("Не удалось установить новый пароль для {Email}: {Errors}", email,
+                string.Join("; ", added.Errors.Select(e => e.Description)));
+            return;
+        }
+
+        // На всякий случай разблокируем lockout, если он был.
+        await _users.ResetAccessFailedCountAsync(user);
+        if (await _users.IsLockedOutAsync(user))
+        {
+            await _users.SetLockoutEndDateAsync(user, null);
+        }
+
+        _log.LogWarning("Seed:ResetAdminPasswordOnStartup=true: пароль для {Email} переустановлен. " +
+                        "Снимите флаг и рестартните приложение.", email);
     }
 
     private async Task SeedCmsDefaults(CancellationToken ct)
