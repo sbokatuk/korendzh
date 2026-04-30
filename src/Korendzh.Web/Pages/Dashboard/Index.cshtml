@@ -1,7 +1,9 @@
 @page
 @model Korendzh.Web.Pages.Dashboard.IndexModel
+@inject Microsoft.Extensions.Options.IOptions<Korendzh.Web.Configuration.AppOptions> AppOpt
 @{
     ViewData["Title"] = "Кабинет";
+    var trackingOnly = AppOpt.Value.IsTrackingOnly;
 }
 <h1>Здравствуйте, @Model.FullName!</h1>
 <p>Вы вошли как <strong>@Model.Role</strong>.</p>
@@ -20,10 +22,13 @@
     {
         <a class="btn secondary" asp-page="/Admin/Managers/Index">Мастера</a>
         <a class="btn secondary" asp-page="/Admin/Divisions/Index">Подразделения</a>
-        <a class="btn secondary" asp-page="/Admin/Cms/SiteSettings">Настройки сайта</a>
-        <a class="btn secondary" asp-page="/Admin/Cms/Services/Index">Услуги (CMS)</a>
-        <a class="btn secondary" asp-page="/Admin/Cms/Reviews/Index">Отзывы (CMS)</a>
-        <a class="btn secondary" asp-page="/Admin/Cms/Pages/Index">Страницы (CMS)</a>
+        @if (!trackingOnly)
+        {
+            <a class="btn secondary" asp-page="/Admin/Cms/SiteSettings">Настройки сайта</a>
+            <a class="btn secondary" asp-page="/Admin/Cms/Services/Index">Услуги (CMS)</a>
+            <a class="btn secondary" asp-page="/Admin/Cms/Reviews/Index">Отзывы (CMS)</a>
+            <a class="btn secondary" asp-page="/Admin/Cms/Pages/Index">Страницы (CMS)</a>
+        }
         <a class="btn secondary" asp-page="/Admin/EmailTest">Тест email</a>
     }
 </div>

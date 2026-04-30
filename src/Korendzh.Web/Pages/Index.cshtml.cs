@@ -1,9 +1,11 @@
 using Korendzh.Domain;
 using Korendzh.Domain.Cms;
 using Korendzh.Infrastructure.Cms;
+using Korendzh.Web.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 
 namespace Korendzh.Web.Pages;
 
@@ -11,10 +13,12 @@ namespace Korendzh.Web.Pages;
 public class IndexModel : PageModel
 {
     private readonly ICmsService _cms;
+    private readonly AppOptions _app;
 
-    public IndexModel(ICmsService cms)
+    public IndexModel(ICmsService cms, IOptions<AppOptions> app)
     {
         _cms = cms;
+        _app = app.Value;
     }
 
     public SiteSettings Settings { get; private set; } = new();
@@ -23,8 +27,24 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        // Если зашёл авторизованный воркер (без управленческих ролей) — сразу к форме
-        // ввода часов. Менеджеры и админы видят публичный лендинг как обычные посетители.
+        // TrackingOnly: публичного лендинга нет — анонима отправляем на форму входа,
+        // авторизованных распределяем по ролям.
+        if (_app.IsTrackingOnly)
+        {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return LocalRedirect("/Account/Login");
+            }
+            if (User.IsInRole(Roles.Worker)
+                && !User.IsInRole(Roles.Manager)
+                && !User.IsInRole(Roles.Admin))
+            {
+                return LocalRedirect("/TimeEntries/Create");
+            }
+            return LocalRedirect("/Dashboard");
+        }
+
+        // Full mode: воркер сразу идёт к форме часов, остальные видят лендинг.
         if (User.Identity?.IsAuthenticated == true
             && User.IsInRole(Roles.Worker)
             && !User.IsInRole(Roles.Manager)

@@ -1,5 +1,9 @@
 @inject SignInManager<AppUser> SignInManager
 @inject UserManager<AppUser> UserManager
+@inject Microsoft.Extensions.Options.IOptions<Korendzh.Web.Configuration.AppOptions> AppOpt
+@{
+    var trackingOnly = AppOpt.Value.IsTrackingOnly;
+}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -32,14 +36,20 @@
             {
                 <a asp-page="/Admin/Managers/Index">Мастера</a>
                 <a asp-page="/Admin/Divisions/Index">Подразделения</a>
-                <a asp-page="/Admin/Cms/SiteSettings">Сайт</a>
-                <a asp-page="/Admin/Cms/Services/Index">Услуги</a>
-                <a asp-page="/Admin/Cms/Reviews/Index">Отзывы</a>
-                <a asp-page="/Admin/Cms/Pages/Index">Страницы</a>
+                @if (!trackingOnly)
+                {
+                    <a asp-page="/Admin/Cms/SiteSettings">Сайт</a>
+                    <a asp-page="/Admin/Cms/Services/Index">Услуги</a>
+                    <a asp-page="/Admin/Cms/Reviews/Index">Отзывы</a>
+                    <a asp-page="/Admin/Cms/Pages/Index">Страницы</a>
+                }
                 <a asp-page="/Admin/EmailTest">Тест email</a>
             }
             <span class="user">@(user?.FullName ?? User.Identity?.Name)</span>
-            <a asp-page="/Index" style="margin-left:8px">→ Сайт</a>
+            @if (!trackingOnly)
+            {
+                <a asp-page="/Index" style="margin-left:8px">→ Сайт</a>
+            }
             <form method="post" asp-page="/Account/Logout" style="display:inline">
                 <button type="submit" class="linklike">Выйти</button>
             </form>

@@ -4,6 +4,7 @@ using Korendzh.Infrastructure.Auditing;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
 using Korendzh.Web.Auth;
+using Korendzh.Web.Configuration;
 using Korendzh.Web.Seeding;
 using Korendzh.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -28,6 +29,9 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>
         Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
         Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
 });
+
+// Режим работы приложения (Full / TrackingOnly). См. docs/app-mode.md.
+builder.Services.Configure<AppOptions>(builder.Configuration.GetSection("App"));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
@@ -148,6 +152,35 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRequestLocalization();
 app.UseRouting();
+
+// Режим TrackingOnly: блокируем публичный лендинг, CMS и связанные пути — возвращаем 404.
+// Сидится между UseRouting и UseAuthentication, чтобы аккуратно работать с роутингом, но не
+// затрагивать static files / health checks.
+app.Use(async (ctx, next) =>
+{
+    var mode = ctx.RequestServices
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<AppOptions>>()
+        .Value.Mode;
+
+    if (mode == AppMode.TrackingOnly)
+    {
+        var path = ctx.Request.Path.Value ?? string.Empty;
+        bool blocked =
+            path.StartsWith("/services", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/reviews", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/contacts", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/p/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/Admin/Cms", StringComparison.OrdinalIgnoreCase);
+
+        if (blocked)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+    }
+    await next();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -170,6 +203,9 @@ using (var scope = app.Services.CreateScope())
     var sp = scope.ServiceProvider;
     var db = sp.GetRequiredService<AppDbContext>();
     var startupLogger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+    var appOpt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AppOptions>>().Value;
+    startupLogger.LogInformation("App mode: {Mode}", appOpt.Mode);
 
     var hasMigrations = db.Database.GetMigrations().Any();
     if (hasMigrations)
