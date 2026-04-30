@@ -10,7 +10,7 @@
     <Nullable>enable</Nullable>
 
     <!-- Display name -->
-    <ApplicationTitle>Korendzh</ApplicationTitle>
+    <ApplicationTitle>АрВи-транс</ApplicationTitle>
     <!-- App identifier -->
     <ApplicationId>by.korendzh.mobile</ApplicationId>
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>

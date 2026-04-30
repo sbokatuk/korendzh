@@ -9,12 +9,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] · Korendzh</title>
+    <title>@ViewData["Title"] · АрВи-транс</title>
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
 <header class="topbar">
-    <div class="brand"><a asp-page="/Dashboard/Index">Korendzh · Кабинет</a></div>
+    <div class="brand"><a asp-page="/Dashboard/Index">АрВи-транс · Кабинет</a></div>
     <nav class="navmain">
         @if (SignInManager.IsSignedIn(User))
         {
@@ -68,7 +68,7 @@
     @RenderBody()
 </main>
 <footer class="footer">
-    <span>Korendzh · @DateTime.UtcNow.Year</span>
+    <span>АрВи-транс · @DateTime.UtcNow.Year</span>
 </footer>
 @RenderSection("Scripts", required: false)
 </body>

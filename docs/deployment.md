@@ -107,7 +107,7 @@ builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, relo
     "User": "noreply@бокатюк.бел",
     "Password": "<smtp-pass>",
     "FromAddress": "noreply@бокатюк.бел",
-    "FromName": "Korendzh",
+    "FromName": "АрВи-транс",
     "AppBaseUrl": "https://бокатюк.бел"
   },
   "Google": {

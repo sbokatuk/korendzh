@@ -8,10 +8,10 @@ public class SiteSettings
 {
     public int Id { get; set; } = 1;
 
-    public string SiteName { get; set; } = "Korendzh";
+    public string SiteName { get; set; } = "АрВи-транс";
 
     /// <summary>Заголовок hero на главной.</summary>
-    public string HeroTitle { get; set; } = "СТО Korendzh — ремонт без сюрпризов";
+    public string HeroTitle { get; set; } = "СТО АрВи-транс — ремонт без сюрпризов";
 
     /// <summary>Подзаголовок под hero.</summary>
     public string HeroSubtitle { get; set; } =

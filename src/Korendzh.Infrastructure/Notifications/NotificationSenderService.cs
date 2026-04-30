@@ -127,7 +127,7 @@ public class NotificationSenderService : BackgroundService
                     }
                     foreach (var d in devices)
                     {
-                        await pushSender.SendAsync(d, "Korendzh", PushTemplates.Render(n.TemplateTag, n.PayloadJson), ct);
+                        await pushSender.SendAsync(d, "АрВи-транс", PushTemplates.Render(n.TemplateTag, n.PayloadJson), ct);
                     }
                     n.Status = NotificationStatus.Sent;
                     n.SentAt = DateTime.UtcNow;

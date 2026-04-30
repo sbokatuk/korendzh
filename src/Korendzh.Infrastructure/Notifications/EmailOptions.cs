@@ -8,6 +8,6 @@ public class EmailOptions
     public string User { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string FromAddress { get; set; } = "noreply@бокатюк.бел";
-    public string FromName { get; set; } = "Korendzh";
+    public string FromName { get; set; } = "АрВи-транс";
     public string AppBaseUrl { get; set; } = "https://бокатюк.бел";
 }

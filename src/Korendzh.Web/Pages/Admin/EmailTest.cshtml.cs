@@ -20,9 +20,9 @@ public class EmailTestModel : PageModel
     }
 
     [BindProperty] public string ToEmail { get; set; } = string.Empty;
-    [BindProperty] public string Subject { get; set; } = "Тест email Korendzh";
+    [BindProperty] public string Subject { get; set; } = "Тест email АрВи-транс";
     [BindProperty] public string Body { get; set; } =
-        "<p>Это тестовое письмо из админки Korendzh.</p><p>Если оно дошло — SMTP настроен корректно.</p>";
+        "<p>Это тестовое письмо из админки АрВи-транс.</p><p>Если оно дошло — SMTP настроен корректно.</p>";
 
     public EmailOptions Options { get; }
     public string? ResultMessage { get; private set; }

@@ -34,7 +34,7 @@ public class SiteSettingsModel : PageModel
 
     public class InputModel
     {
-        [Required, MaxLength(100)] public string SiteName { get; set; } = "Korendzh";
+        [Required, MaxLength(100)] public string SiteName { get; set; } = "АрВи-транс";
         [MaxLength(200)] public string HeroTitle { get; set; } = string.Empty;
         [MaxLength(500)] public string HeroSubtitle { get; set; } = string.Empty;
         [MaxLength(500)] public string? HeroImageUrl { get; set; }

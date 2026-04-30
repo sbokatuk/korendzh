@@ -19,20 +19,20 @@ public static class EmailTemplates
         return templateTag switch
         {
             NotificationTemplates.InviteCreated => (
-                "Приглашение в Korendzh",
+                "Приглашение в АрВи-транс",
                 $"<p>Здравствуйте, {Get("fullName")}!</p>" +
-                $"<p>Вас пригласили в систему Korendzh. Чтобы задать пароль и войти, перейдите по ссылке:</p>" +
+                $"<p>Вас пригласили в систему АрВи-транс. Чтобы задать пароль и войти, перейдите по ссылке:</p>" +
                 $"<p><a href=\"{Get("inviteUrl")}\">{Get("inviteUrl")}</a></p>" +
                 "<p>Ссылка действительна 7 дней.</p>"
             ),
             NotificationTemplates.PasswordResetRequested => (
-                "Восстановление пароля Korendzh",
+                "Восстановление пароля АрВи-транс",
                 "<p>Вы запросили сброс пароля. Перейдите по ссылке, чтобы задать новый:</p>" +
                 $"<p><a href=\"{Get("resetUrl")}\">{Get("resetUrl")}</a></p>" +
                 "<p>Ссылка действует 1 час. Если вы не запрашивали сброс — проигнорируйте письмо.</p>"
             ),
             NotificationTemplates.PasswordChanged => (
-                "Пароль Korendzh изменён",
+                "Пароль АрВи-транс изменён",
                 "<p>Пароль вашего аккаунта только что был изменён. Если это были не вы — немедленно сбросьте пароль.</p>"
             ),
             NotificationTemplates.TimeEntryEditedByManager => (
@@ -49,7 +49,7 @@ public static class EmailTemplates
                 $"<p>Создана запись от {Get("workDate")} (часы: {Get("hours")}).</p>" +
                 $"<p><a href=\"{Get("entryUrl")}\">Открыть запись</a></p>"
             ),
-            _ => ("Уведомление Korendzh", $"<p>Событие: {templateTag}</p>")
+            _ => ("Уведомление АрВи-транс", $"<p>Событие: {templateTag}</p>")
         };
     }
 }
@@ -61,6 +61,6 @@ public static class PushTemplates
         NotificationTemplates.TimeEntryEditedByManager => "Менеджер изменил вашу запись",
         NotificationTemplates.TimeEntryDeletedByManager => "Менеджер удалил вашу запись",
         NotificationTemplates.TimeEntryCreatedByManager => "Менеджер создал запись от вашего имени",
-        _ => "Korendzh: уведомление"
+        _ => "АрВи-транс: уведомление"
     };
 }
