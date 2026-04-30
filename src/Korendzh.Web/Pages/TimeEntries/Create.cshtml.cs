@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Korendzh.Domain;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
@@ -45,14 +46,20 @@ public class CreateModel : PageModel
     {
         public Guid? WorkerId { get; set; }
 
-        [Required, DataType(DataType.Date)]
+        // Дата по умолчанию = сегодня; пользователь может изменить, но поле не помечено [Required],
+        // т.к. оно никогда не пустое (биндинг кладёт сегодняшнюю дату из инициализатора).
+        [DataType(DataType.Date)]
         public DateOnly WorkDate { get; set; }
 
-        [Range(0.01, 24.0)]
-        public decimal Hours { get; set; }
+        /// <summary>
+        /// Часы — единственное обязательное поле. Принимаем форматы '1.2' и '1,2',
+        /// в БД храним как decimal в инвариантной форме.
+        /// </summary>
+        [Required(ErrorMessage = "Укажите количество часов")]
+        public string Hours { get; set; } = string.Empty;
 
-        [Required, MaxLength(200)]
-        public string TaskName { get; set; } = string.Empty;
+        [MaxLength(200)]
+        public string? TaskName { get; set; }
 
         [MaxLength(100)]
         public string? CarName { get; set; }
@@ -90,6 +97,19 @@ public class CreateModel : PageModel
 
         // Дата работы: не ограничиваем будущим — план/факт может оформляться авансом.
 
+        // Парсим часы. Принимаем оба разделителя ('.' и ','), храним как decimal в БД.
+        decimal hours = 0m;
+        if (!string.IsNullOrWhiteSpace(Input.Hours))
+        {
+            var raw = Input.Hours.Trim().Replace(',', '.');
+            if (!decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out hours)
+                || hours <= 0m || hours > 24m)
+            {
+                ModelState.AddModelError(nameof(Input.Hours),
+                    "Введите количество часов от 0.01 до 24 (например, 1.5 или 1,5).");
+            }
+        }
+
         // Если CarName заполнено, либо LicensePlate тоже должен быть (см. validation.md).
         if (!string.IsNullOrWhiteSpace(Input.CarName) ^ !string.IsNullOrWhiteSpace(Input.LicensePlate))
         {
@@ -108,9 +128,9 @@ public class CreateModel : PageModel
         var entry = new TimeEntry
         {
             WorkerId = workerId,
-            WorkDate = Input.WorkDate,
-            Hours = Input.Hours,
-            TaskName = Input.TaskName.Trim(),
+            WorkDate = Input.WorkDate == default ? DateOnly.FromDateTime(DateTime.Today) : Input.WorkDate,
+            Hours = hours,
+            TaskName = (Input.TaskName ?? string.Empty).Trim(),
             CarId = carId,
             LicensePlate = Input.LicensePlate?.Trim(),
             Description = Input.Description?.Trim(),

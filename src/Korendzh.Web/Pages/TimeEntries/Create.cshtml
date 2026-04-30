@@ -8,44 +8,48 @@
 <form method="post" class="card">
     <div asp-validation-summary="ModelOnly" class="error"></div>
 
-    @if (Model.IsManagerOrAdmin)
-    {
-        <div class="field">
-            <label asp-for="Input.WorkerId">Работник</label>
-            <select asp-for="Input.WorkerId" required>
-                <option value="">— выберите —</option>
-                @foreach (var w in Model.Workers)
-                {
-                    <option value="@w.Id">@w.FullName</option>
-                }
-            </select>
-            <span asp-validation-for="Input.WorkerId"></span>
-        </div>
-    }
+    <div class="actions" style="margin-bottom:1.25rem">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn secondary" asp-page="/TimeEntries/Index">Отмена</a>
+    </div>
+
+    <div class="field">
+        <label asp-for="Input.Hours" style="font-size:1.05rem">Часы <span style="color:#b91c1c">*</span></label>
+        <input asp-for="Input.Hours"
+               type="text"
+               inputmode="decimal"
+               autocomplete="off"
+               autofocus
+               required
+               placeholder="например, 1.5 или 1,5"
+               style="font-size:1.25rem;font-weight:600" />
+        <small class="muted">Единственное обязательное поле. Допускаются и точка, и запятая.</small>
+        <span asp-validation-for="Input.Hours"></span>
+    </div>
 
     <div class="row">
         <div class="field">
             <label asp-for="Input.WorkDate">Дата</label>
-            <input asp-for="Input.WorkDate" type="date" required />
-            <span asp-validation-for="Input.WorkDate"></span>
+            <input asp-for="Input.WorkDate" type="date" />
         </div>
-        <div class="field">
-            <label asp-for="Input.Hours">Часы</label>
-            <input asp-for="Input.Hours" type="number" step="0.25" min="0.25" max="24" required />
-            <div class="quick-buttons" data-target="Input.Hours" style="margin-top:6px">
-                @for (int h = 1; h <= 10; h++)
-                {
-                    <button type="button" class="chip" data-value="@h">@h</button>
-                }
+        @if (Model.IsManagerOrAdmin)
+        {
+            <div class="field">
+                <label asp-for="Input.WorkerId">Работник</label>
+                <select asp-for="Input.WorkerId">
+                    <option value="">— я сам —</option>
+                    @foreach (var w in Model.Workers)
+                    {
+                        <option value="@w.Id">@w.FullName</option>
+                    }
+                </select>
             </div>
-            <span asp-validation-for="Input.Hours"></span>
-        </div>
+        }
     </div>
 
     <div class="field">
         <label asp-for="Input.TaskName">Задача</label>
-        <input asp-for="Input.TaskName" type="text" maxlength="200" required />
-        <span asp-validation-for="Input.TaskName"></span>
+        <input asp-for="Input.TaskName" type="text" maxlength="200" />
     </div>
 
     <div class="row">
@@ -77,19 +81,28 @@
         <label asp-for="Input.Description">Описание</label>
         <textarea asp-for="Input.Description" maxlength="500"></textarea>
     </div>
-
-    <div class="actions">
-        <button class="btn" type="submit">Сохранить</button>
-        <a class="btn secondary" asp-page="/TimeEntries/Index">Отмена</a>
-    </div>
 </form>
 
 @section Scripts {
     <script>
+        // На клиенте мягко нормализуем ввод часов: запрещаем буквы, разрешаем цифры, '.' и ','.
+        // Серверный парсер всё равно принимает оба разделителя.
+        (function () {
+            const hoursInput = document.querySelector('input[name="Input.Hours"]');
+            if (!hoursInput) return;
+            hoursInput.addEventListener('input', () => {
+                // Оставляем только цифры, '.', ','. Лишние разделители схлопываем.
+                let v = hoursInput.value.replace(/[^\d.,]/g, '');
+                // Не больше одного разделителя.
+                const firstSep = v.search(/[.,]/);
+                if (firstSep !== -1) {
+                    v = v.substring(0, firstSep + 1) + v.substring(firstSep + 1).replace(/[.,]/g, '');
+                }
+                if (v !== hoursInput.value) hoursInput.value = v;
+            });
+        })();
+
         // Автокомплит автомобилей + автозаполнение госномера при выборе из подсказок.
-        // Ключевая идея: храним последние результаты по name → объект {name, licensePlate},
-        // и при изменении CarName проверяем, точно ли совпадает с одной из подсказок —
-        // если да, подставляем LicensePlate (если он не пустой и поле плейта пустое или совпадает с прошлым авто).
         (function () {
             const carInput = document.querySelector('input[name="Input.CarName"]');
             const plateInput = document.querySelector('input[name="Input.LicensePlate"]');
@@ -120,7 +133,6 @@
                 const match = cache.get(name);
                 if (!match) return;
                 if (!match.licensePlate) return;
-                // Подставляем только если поле пустое или совпадает с прошлым подставленным (значит юзер не правил вручную).
                 if (plateInput.value === '' || plateInput.value === lastSuggestedPlate) {
                     plateInput.value = match.licensePlate;
                     lastSuggestedPlate = match.licensePlate;
@@ -133,25 +145,11 @@
                     lastQuery = q;
                     await fetchAndPopulate(q);
                 }
-                // datalist пика — событие 'input' тоже срабатывает, value уже = выбранному.
                 tryAutoFillPlate();
             });
             carInput.addEventListener('change', tryAutoFillPlate);
             carInput.addEventListener('blur', tryAutoFillPlate);
         })();
-
-        // Быстрые кнопки часов (1..10).
-        document.querySelectorAll('.quick-buttons').forEach(group => {
-            const targetName = group.dataset.target;
-            const target = document.querySelector(`[name="${targetName}"]`);
-            if (!target) return;
-            group.querySelectorAll('button.chip').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    target.value = btn.dataset.value;
-                    target.dispatchEvent(new Event('input', { bubbles: true }));
-                });
-            });
-        });
 
         // Быстрый выбор последних автомобилей.
         document.querySelectorAll('.recent-cars button.chip').forEach(btn => {
