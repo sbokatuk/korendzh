@@ -94,6 +94,21 @@ public class LoginModel : PageModel
             return Page();
         }
 
+        // Если у юзера ещё нет пароля в БД — это либо непринятый invite, либо запрошенный сброс
+        // пароля, по ссылке из которого ещё не прошли. Показываем осмысленный текст и логируем
+        // факт, чтобы поддержке было понятно, что слать новое приглашение или ссылку на сброс.
+        // CheckPasswordAsync ниже всё равно вернул бы false на passwordless-аккаунте, но юзер
+        // увидел бы "Неверный email или пароль" — что вводит в заблуждение.
+        if (!await _users.HasPasswordAsync(user))
+        {
+            _log.LogInformation(
+                "Login: account '{Email}' has no password set yet (invite not accepted or reset link not used). EmailConfirmed={EC}",
+                inputEmail, user.EmailConfirmed);
+            ErrorMessage = "Этот аккаунт ещё не активирован. Откройте письмо-приглашение и задайте пароль, " +
+                           "либо попросите администратора прислать новое приглашение или сбросить пароль.";
+            return Page();
+        }
+
         // Для диагностики проверим пароль отдельно — отделит «не тот пароль» от других сценариев.
         var passwordOk = await _users.CheckPasswordAsync(user, inputPassword);
         _log.LogInformation(
