@@ -46,6 +46,15 @@ public static class DependencyInjection
                 // У нас username = email, и домен бокатюк.бел содержит кириллицу. Пустая строка отключает
                 // проверку допустимых символов; уникальность email всё равно гарантируется отдельно.
                 options.User.AllowedUserNameCharacters = string.Empty;
+
+                // Lockout отключён полностью: продакшен — небольшая команда СТО, любые неудачные попытки
+                // легко превращаются в саппорт-тикет. См. docs/roles-permissions.md, docs/system-overview.md.
+                // Новые юзеры создаются с LockoutEnabled=false (поле AppUser); этих настроек хватает,
+                // чтобы Identity не блокировал даже теоретически. Защитно в LoginModel/DataSeeder ещё
+                // одним SaveChanges разлочиваем уже существующие записи (LockoutEnd=null, AFC=0).
+                options.Lockout.AllowedForNewUsers = false;
+                options.Lockout.MaxFailedAccessAttempts = int.MaxValue;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.Zero;
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();

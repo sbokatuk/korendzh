@@ -5,11 +5,11 @@
 }
 <h1>Новая запись</h1>
 
-<form method="post" class="card">
+<form method="post" class="card" id="time-entry-create-form">
     <div asp-validation-summary="ModelOnly" class="error"></div>
 
     <div class="actions" style="margin-bottom:1.25rem">
-        <button class="btn" type="submit">Сохранить</button>
+        <button class="btn" type="submit" id="submit-btn" data-label-idle="Сохранить" data-label-busy="Сохраняем…">Сохранить</button>
         <a class="btn secondary" asp-page="/TimeEntries/Index">Отмена</a>
     </div>
 
@@ -90,6 +90,27 @@
 
 @section Scripts {
     <script>
+        // Anti-double-tap: после первого submit блокируем кнопку до ответа сервера.
+        // На медленном мобильном интернете рабочий может тыкнуть «Сохранить» 2-3 раза.
+        (function () {
+            const form = document.getElementById('time-entry-create-form');
+            const btn = document.getElementById('submit-btn');
+            if (!form || !btn) return;
+            form.addEventListener('submit', () => {
+                btn.disabled = true;
+                const busy = btn.getAttribute('data-label-busy');
+                if (busy) btn.textContent = busy;
+                // Перестраховка: если форма по какой-то причине не отправилась — через 10 секунд разблокируем.
+                setTimeout(() => {
+                    if (btn.disabled) {
+                        btn.disabled = false;
+                        const idle = btn.getAttribute('data-label-idle');
+                        if (idle) btn.textContent = idle;
+                    }
+                }, 10000);
+            });
+        })();
+
         // На клиенте мягко нормализуем ввод часов: запрещаем буквы, разрешаем цифры, '.' и ','.
         // Серверный парсер всё равно принимает оба разделителя.
         (function () {

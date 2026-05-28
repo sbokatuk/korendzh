@@ -70,6 +70,59 @@ dotnet publish src/Korendzh.Web/Korendzh.Web.csproj -c Release -o publish
    - `stdoutLogEnabled="false"` в проде, `true` — только при разовой диагностике.
 3. **App Pool** в Plesk: «No Managed Code» (для .NET Core), пользователь — IIS AppPool, права на чтение `\httpdocs` и запись в `App_Data` / `logs`.
 
+## DataProtection, auth-cookie и TempData
+
+ASP.NET Core шифрует auth-cookie, antiforgery-token и (опционально) TempData ключами DataProtection. Если ключи теряются между рестартами App Pool, **все логины разом инвалидируются**, а у юзеров с устаревшими куками сыпется `FormatException: The input is not a valid Base-64 string` при попытке декодировать TempData / antiforgery.
+
+### Что сделано в проекте
+
+1. **`PersistKeysToFileSystem(App_Data/dp-keys)`** в `Program.cs` — ключи лежат на диске и переживают рестарт App Pool. Plesk Git pull не удаляет untracked-файлы, так что папка `App_Data/dp-keys` остаётся между деплоями.
+
+2. **`SetApplicationName("Korendzh-v2-2026-05-28")`** — purpose-string, изолирующий зашифрованные блобы. Изменение значения **инвалидирует все старые auth/antiforgery/TempData-куки одним движением**. Используется как «выключатель» для форс-релогина при инцидентах.
+
+   - История:
+     - v1 (2026-04-29) — `"Korendzh"`. На старте 29 апреля DataProtection поднимался в эфемерном режиме (`Neither user profile nor HKLM registry available`), потому что папка ключей ещё не была настроена. У юзеров в браузерах осели куки, подписанные ключами, которые исчезли при рестарте.
+     - v2 (2026-05-28) — `"Korendzh-v2-2026-05-28"`. Одноразовый bump для очистки следов v1 + переезд TempData на серверный store.
+
+3. **Имя auth-куки тоже версионируется** — `korendzh.auth` → `korendzh.auth.v2`. Это страховка: даже если purpose-string совпадёт, браузер пришлёт куку с другим именем, и сервер её просто не увидит. Старая `korendzh.auth` остаётся в браузере как «мусор» и протухает по `ExpireTimeSpan` (14 дней).
+
+4. **TempData → Session-store**, а не cookie (`AddSessionStateTempDataProvider`). Session-cookie содержит только короткий ID, не зашифрованный блоб → класс «cookie can not be loaded» невозможен в принципе. Session хранится в памяти процесса (`AddDistributedMemoryCache`), сбрасывается при рестарте — это норм, TempData по дизайну одноразовая.
+
+5. **Стартовая проверка** в `Program.cs` пишет в лог:
+   ```
+   info: Startup[0] DataProtection keys: dir=C:\…\App_Data\dp-keys, exists=True, keyCount=2, writable=True, applicationName=Korendzh-v2-2026-05-28
+   ```
+   Если `keyCount=0` на 2-й день — значит папка теряется при деплое (см. ниже).
+   Если `writable=False` — у AppPool-пользователя нет права записи в `App_Data/dp-keys`, ключи будут эфемерными.
+
+### Что увидят пользователи при следующем деплое
+
+| Категория | Что произойдёт |
+|---|---|
+| Не заходил никогда | Ничего особенного: первый логин даст свежую `korendzh.auth.v2` и сессию. |
+| Логинился давно (есть старая `korendzh.auth`) | Сервер не видит куку с новым именем → редирект на `/Account/Login`. Один раз заходит, получает новую куку. |
+| Логинился недавно (есть валидная `korendzh.auth`) | Аналогично: новая куки нет, юзер перелогинивается один раз. После этого — обычная работа. |
+
+Пароли, данные, сессии в БД — всё сохраняется. Это не reset, а только одноразовый принудительный re-login.
+
+### При следующем подобном инциденте
+
+Увеличиваем сразу обе версии в `Program.cs`:
+
+```csharp
+.SetApplicationName("Korendzh-v3-YYYY-MM-DD");
+// ...
+opt.Cookie.Name = "korendzh.auth.v3";
+```
+
+И записываем в историю в комментарии над `SetApplicationName`.
+
+### Чтобы deploy случайно не съел `App_Data/dp-keys`
+
+- В репозитории по `.gitignore` папка `App_Data/dp-keys` исключена. GitHub Actions кладёт в ветку `deploy` только publish-артефакт (без `App_Data`).
+- Plesk Git pull в `\httpdocs` не трогает untracked-файлы.
+- Если когда-то перейдём на «hard reset» в Plesk — `App_Data/dp-keys` нужно вынести из `\httpdocs` совсем (например, в `\App_Data\dp-keys` на уровень выше) и в `Program.cs` указать абсолютный путь.
+
 ## Конфигурация и секреты
 
 Хранение по слоям, **никогда не коммитим продакшен-секреты в Git**:

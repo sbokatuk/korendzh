@@ -40,7 +40,31 @@ public class DataSeeder
         await SeedRoles();
         await SeedAdmin(ct);
         await ResetAdminPasswordIfRequested();
+        await ClearAllLockouts(ct);
         await SeedCmsDefaults(ct);
+    }
+
+    /// <summary>
+    /// Lockout в проекте отключён политически (см. DependencyInjection.cs + docs/roles-permissions.md).
+    /// На старте чистим LockoutEnd / AccessFailedCount / LockoutEnabled у всех пользователей,
+    /// которые остались с прошлых сборок системы. Идемпотентно: если уже всё чисто — SaveChanges не делает ничего.
+    /// </summary>
+    private async Task ClearAllLockouts(CancellationToken ct)
+    {
+        var locked = await _db.Users
+            .Where(u => u.LockoutEnd != null || u.AccessFailedCount > 0 || u.LockoutEnabled)
+            .ToListAsync(ct);
+
+        if (locked.Count == 0) return;
+
+        foreach (var u in locked)
+        {
+            u.LockoutEnd = null;
+            u.AccessFailedCount = 0;
+            u.LockoutEnabled = false;
+        }
+        await _db.SaveChangesAsync(ct);
+        _log.LogInformation("Cleared lockout state for {Count} users (lockout disabled project-wide).", locked.Count);
     }
 
     /// <summary>

@@ -96,15 +96,27 @@ public class LoginModel : PageModel
 
         // Для диагностики проверим пароль отдельно — отделит «не тот пароль» от других сценариев.
         var passwordOk = await _users.CheckPasswordAsync(user, inputPassword);
-        var lockedOut = await _users.IsLockedOutAsync(user);
         _log.LogInformation(
-            "Login: user '{Email}' found. PasswordCheck={PwOk}, LockedOut={Locked}, AccessFailedCount={AFC}, EmailConfirmed={EC}, HasPassword={HP}, PasswordLen={PL}",
-            inputEmail, passwordOk, lockedOut, user.AccessFailedCount, user.EmailConfirmed,
+            "Login: user '{Email}' found. PasswordCheck={PwOk}, EmailConfirmed={EC}, HasPassword={HP}, PasswordLen={PL}",
+            inputEmail, passwordOk, user.EmailConfirmed,
             await _users.HasPasswordAsync(user), inputPassword.Length);
 
-        var result = await _signIn.PasswordSignInAsync(user, inputPassword, Input.RememberMe, lockoutOnFailure: true);
-        _log.LogInformation("Login result for '{Email}': Succeeded={S}, IsLockedOut={L}, IsNotAllowed={NA}, RequiresTwoFactor={2FA}",
-            inputEmail, result.Succeeded, result.IsLockedOut, result.IsNotAllowed, result.RequiresTwoFactor);
+        // Lockout в проекте отключён (см. DependencyInjection.cs и docs/roles-permissions.md).
+        // Если у юзера в БД с прошлой жизни остались LockoutEnd / AccessFailedCount / LockoutEnabled — снимаем их защитно.
+        // Это «починит» уже залоченных пользователей при первой же попытке логина.
+        if (user.LockoutEnd.HasValue || user.AccessFailedCount > 0 || user.LockoutEnabled)
+        {
+            _log.LogInformation("Login: clearing stale lockout state for '{Email}' (LockoutEnd={End}, AFC={AFC}, LockoutEnabled={LE})",
+                inputEmail, user.LockoutEnd, user.AccessFailedCount, user.LockoutEnabled);
+            await _users.SetLockoutEnabledAsync(user, false);
+            await _users.SetLockoutEndDateAsync(user, null);
+            await _users.ResetAccessFailedCountAsync(user);
+        }
+
+        // lockoutOnFailure: false — счётчик неудачных попыток не должен расти, блокировок в системе нет.
+        var result = await _signIn.PasswordSignInAsync(user, inputPassword, Input.RememberMe, lockoutOnFailure: false);
+        _log.LogInformation("Login result for '{Email}': Succeeded={S}, IsNotAllowed={NA}, RequiresTwoFactor={2FA}",
+            inputEmail, result.Succeeded, result.IsNotAllowed, result.RequiresTwoFactor);
 
         if (result.Succeeded)
         {
@@ -117,11 +129,7 @@ public class LoginModel : PageModel
             var isPrivileged = roles.Contains(Roles.Admin) || roles.Contains(Roles.Manager);
             return LocalRedirect(isPrivileged ? "/Dashboard" : "/TimeEntries/Create");
         }
-        if (result.IsLockedOut)
-        {
-            ErrorMessage = "Аккаунт временно заблокирован, попробуйте позже.";
-        }
-        else if (result.IsNotAllowed)
+        if (result.IsNotAllowed)
         {
             ErrorMessage = "Вход запрещён. Проверьте, подтверждён ли email или активна ли учётная запись.";
         }

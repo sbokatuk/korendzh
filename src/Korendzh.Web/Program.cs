@@ -10,6 +10,7 @@ using Korendzh.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -45,7 +46,32 @@ dpKeysDir.Create();
 builder.Services
     .AddDataProtection()
     .PersistKeysToFileSystem(dpKeysDir)
-    .SetApplicationName("Korendzh");
+    // ApplicationName — purpose string, изолирующий зашифрованные DataProtection-блобы.
+    // Изменение этого значения инвалидирует ВСЕ старые auth/antiforgery/TempData куки одним движением.
+    // Используется как «выключатель»: bump suffix (v2 → v3) → форс-релогин всех существующих юзеров.
+    //
+    // История:
+    //   v1 (2026-04-29) — "Korendzh"
+    //   v2 (2026-05-28) — "Korendzh-v2-2026-05-28": одноразовый bump после периода эфемерных ключей
+    //                     (см. docs/deployment.md → DataProtection). Куки до этого деплоя падали с
+    //                     FormatException при декодировании; bump чисто их обрывает.
+    // При следующем подобном инциденте — увеличить версию (v3-…) и записать историю здесь.
+    .SetApplicationName("Korendzh-v2-2026-05-28");
+
+// TempData через Session, а не Cookie. CookieTempDataProvider шифрует TempData через DataProtection
+// и кладёт в cookie — это даёт FormatException при любом расхождении ключей (например, юзер ходил
+// с кукой времён эфемерного DataProtection до 29 апреля). Session хранит TempData серверно, в куки
+// уходит только короткий session-ID. Class «cookie can not be loaded» больше не возникает.
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(opt =>
+{
+    opt.Cookie.Name = "korendzh.session";
+    opt.Cookie.HttpOnly = true;
+    opt.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    opt.Cookie.SameSite = SameSiteMode.Lax;
+    opt.Cookie.IsEssential = true;
+    opt.IdleTimeout = TimeSpan.FromHours(2);
+});
 
 builder.Services.AddKorendzhInfrastructure(builder.Configuration);
 
@@ -56,9 +82,13 @@ builder.Services.AddScoped<JwtTokenIssuer>();
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
 
 // Cookie-based auth (Identity already wires its own; tweak login paths).
+//
+// Имя куки версионируем (.v2) синхронно с SetApplicationName-bump'ом DataProtection. Старая
+// "korendzh.auth" в браузере остаётся, но сервер по ней искать не будет — юзер увидит Login
+// один раз и получит свежую "korendzh.auth.v2", подписанную текущим ключом. См. docs/deployment.md.
 builder.Services.ConfigureApplicationCookie(opt =>
 {
-    opt.Cookie.Name = "korendzh.auth";
+    opt.Cookie.Name = "korendzh.auth.v2";
     opt.Cookie.HttpOnly = true;
     opt.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     opt.LoginPath = "/Account/Login";
@@ -107,6 +137,9 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
 builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
 
 // Razor Pages для UI + контроллеры для API/auto-complete.
+// AddSessionStateTempDataProvider() переключает TempData с CookieTempDataProvider на серверный
+// session-store. Без этого TempData["StatusMessage"] шифровался DataProtection и кидал
+// FormatException у юзеров, у которых в браузере осталась кука прежнего ключа.
 builder.Services.AddRazorPages(opt =>
 {
     // По умолчанию всё закрыто; явно открываем публичные разделы.
@@ -118,8 +151,8 @@ builder.Services.AddRazorPages(opt =>
     opt.Conventions.AllowAnonymousToFolder("/Pages"); // Pages/View.cshtml для /p/{slug}
     opt.Conventions.AllowAnonymousToPage("/Index");
     opt.Conventions.AllowAnonymousToPage("/Error");
-});
-builder.Services.AddControllers();
+}).AddSessionStateTempDataProvider();
+builder.Services.AddControllers().AddSessionStateTempDataProvider();
 
 builder.Services.AddScoped<DataSeeder>();
 
@@ -152,6 +185,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRequestLocalization();
 app.UseRouting();
+
+// Session должен подключаться после UseRouting и до UseAuthentication: TempData провайдер
+// читает/пишет сессию во время обработки страницы. Cookie сессии — короткий ID, не шифрованный
+// блоб, поэтому FormatException на нём невозможен.
+app.UseSession();
 
 // Режим TrackingOnly: блокируем публичный лендинг, CMS и связанные пути — возвращаем 404.
 // Сидится между UseRouting и UseAuthentication, чтобы аккуратно работать с роутингом, но не
@@ -206,6 +244,41 @@ using (var scope = app.Services.CreateScope())
 
     var appOpt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AppOptions>>().Value;
     startupLogger.LogInformation("App mode: {Mode}", appOpt.Mode);
+
+    // DataProtection self-check: подтверждаем, что папка ключей действительно есть, доступна на запись
+    // и сколько в ней файлов. Если count=0 на свежем деплое — это норма (ключ создастся при первом
+    // запросе). Если count=0 на 2-й день — значит папка теряется при деплое, нужно чинить деплой.
+    try
+    {
+        dpKeysDir.Refresh();
+        var keyCount = dpKeysDir.Exists ? dpKeysDir.GetFiles("key-*.xml").Length : 0;
+        bool writable;
+        try
+        {
+            var probe = Path.Combine(dpKeysDir.FullName, ".write-probe");
+            await File.WriteAllTextAsync(probe, string.Empty);
+            File.Delete(probe);
+            writable = true;
+        }
+        catch
+        {
+            writable = false;
+        }
+        startupLogger.LogInformation(
+            "DataProtection keys: dir={Dir}, exists={Exists}, keyCount={Count}, writable={Writable}, applicationName=Korendzh-v2-2026-05-28",
+            dpKeysDir.FullName, dpKeysDir.Exists, keyCount, writable);
+        if (!writable)
+        {
+            startupLogger.LogWarning(
+                "DataProtection keys dir is NOT writable for AppPool identity. Keys will be ephemeral — все логины будут терять силу при рестарте пула. " +
+                "Проверьте права на {Dir} (нужны Read/Write для AppPool-пользователя).",
+                dpKeysDir.FullName);
+        }
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogWarning(ex, "DataProtection keys self-check failed");
+    }
 
     var hasMigrations = db.Database.GetMigrations().Any();
     if (hasMigrations)

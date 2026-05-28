@@ -68,6 +68,21 @@
 
 Различие — только в наборе прав после входа. Роль определяется в БД, клиент (веб или мобайл) рендерит интерфейс на основании роли, бэкенд проверяет права на каждый запрос (не доверяя клиенту).
 
+### Блокировка по неудачным попыткам — отключена
+
+В проекте **нет lockout по неудачным попыткам входа**. Это сознательное решение для небольшой команды СТО:
+
+- Identity-опции в `src/Korendzh.Infrastructure/DependencyInjection.cs` выставлены так, что новые юзеры создаются с `LockoutEnabled = false`, `MaxFailedAccessAttempts = int.MaxValue`, `DefaultLockoutTimeSpan = TimeSpan.Zero`.
+- `LoginModel` и `AuthApiController` не вызывают `AccessFailedAsync`, передают `lockoutOnFailure: false`.
+- В `LoginModel.OnPostAsync` и в `DataSeeder.RunAsync` есть защитная чистка: если у юзера в БД с прошлых сборок остался `LockoutEnd`/`AccessFailedCount`/`LockoutEnabled` — поля обнуляются.
+- Кнопки «Сбросить пароль» в админке (`/Workers`, `/Admin/Managers`) дополнительно снимают любой остаточный lockout — на случай, если рабочий уже залочен.
+
+Если в будущем понадобится восстановить защиту от брутфорса — это делается на уровне инфраструктуры (rate-limit в IIS / reverse-proxy / fail2ban), а не Identity.
+
+### Единственный способ потерять доступ
+
+`AppUser.IsActive = false` (деактивация админом). Это блокирует логин в `LoginModel` (явная проверка) и `AuthApiController`. Деактивацию делает админ из `/Workers` и `/Admin/Managers`; самобана и автоматических деактиваций нет.
+
 ---
 
-*Документ обновлён: 2026-04-29*
+*Документ обновлён: 2026-05-28*

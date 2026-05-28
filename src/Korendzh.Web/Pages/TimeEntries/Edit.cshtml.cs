@@ -102,17 +102,18 @@ public class EditModel : PageModel
         if (!await _scope.CanAccessTimeEntryAsync(actor, entry.WorkerId)) return Forbid();
 
         // Дата работы не ограничена будущим — табель может оформляться авансом.
-        if (!string.IsNullOrWhiteSpace(Input.CarName) ^ !string.IsNullOrWhiteSpace(Input.LicensePlate))
-        {
-            ModelState.AddModelError(string.Empty, "Заполните оба поля автомобиля или оставьте оба пустыми.");
-        }
+        // XOR-валидация «авто+номер вместе или ничего» убрана: разрешаем любое сочетание.
 
         if (!ModelState.IsValid) return Page();
 
+        var plate = string.IsNullOrWhiteSpace(Input.LicensePlate) ? null : Input.LicensePlate!.Trim();
+        var carName = string.IsNullOrWhiteSpace(Input.CarName) ? null : Input.CarName!.Trim();
+        if (carName is null && plate is not null) carName = plate;
+
         Guid? carId = null;
-        if (!string.IsNullOrWhiteSpace(Input.CarName))
+        if (carName is not null)
         {
-            var car = await _cars.GetOrCreateAsync(Input.CarName!, Input.LicensePlate, actor.Id);
+            var car = await _cars.GetOrCreateAsync(carName, plate, actor.Id);
             carId = car.Id;
         }
 
@@ -130,7 +131,7 @@ public class EditModel : PageModel
             Hours = Input.Hours,
             TaskName = Input.TaskName.Trim(),
             CarId = carId,
-            LicensePlate = Input.LicensePlate?.Trim(),
+            LicensePlate = plate,
             Description = Input.Description?.Trim(),
         };
 

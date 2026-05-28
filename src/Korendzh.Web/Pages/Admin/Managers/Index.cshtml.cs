@@ -52,6 +52,17 @@ public class IndexModel : PageModel
     {
         var target = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (target?.Email is null) return RedirectToPage();
+
+        // Lockout в проекте отключён, но на старых записях ещё могут оставаться LockoutEnd/AFC.
+        // Снимаем их защитно — чтобы кнопка «Сбросить пароль» гарантированно разлочивала юзера здесь и сейчас.
+        if (target.LockoutEnd.HasValue || target.AccessFailedCount > 0 || target.LockoutEnabled)
+        {
+            target.LockoutEnd = null;
+            target.AccessFailedCount = 0;
+            target.LockoutEnabled = false;
+            await _db.SaveChangesAsync();
+        }
+
         await _resets.RequestAsync(target.Email);
         TempData["StatusMessage"] = $"Письмо для сброса пароля отправлено на {target.Email}.";
         return RedirectToPage();

@@ -48,11 +48,9 @@ public class AuthApiController : ControllerBase
         var pwOk = await _users.CheckPasswordAsync(user, req.Password);
         if (!pwOk)
         {
-            await _users.AccessFailedAsync(user);
+            // Lockout в проекте отключён (см. DependencyInjection.cs). Счётчик неудачных попыток не растёт.
             return Unauthorized(new { error = "invalid_credentials" });
         }
-
-        await _users.ResetAccessFailedCountAsync(user);
 
         var (token, expiresAt) = await _issuer.IssueAsync(user);
         var roles = (await _users.GetRolesAsync(user)).ToArray();

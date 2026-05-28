@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Text;
 using Korendzh.Domain;
 using Korendzh.Infrastructure.Identity;
 using Korendzh.Infrastructure.Persistence;
@@ -19,14 +20,22 @@ public class CreateModel : PageModel
     private readonly ITimeEntryService _entries;
     private readonly ICarService _cars;
     private readonly DivisionScope _scope;
+    private readonly ILogger<CreateModel> _log;
 
-    public CreateModel(AppDbContext db, UserManager<AppUser> users, ITimeEntryService entries, ICarService cars, DivisionScope scope)
+    public CreateModel(
+        AppDbContext db,
+        UserManager<AppUser> users,
+        ITimeEntryService entries,
+        ICarService cars,
+        DivisionScope scope,
+        ILogger<CreateModel> log)
     {
         _db = db;
         _users = users;
         _entries = entries;
         _cars = cars;
         _scope = scope;
+        _log = log;
     }
 
     [BindProperty]
@@ -92,54 +101,117 @@ public class CreateModel : PageModel
         var workerId = Input.WorkerId ?? actor.Id;
         if (!await _scope.CanAccessWorkerAsync(actor, workerId))
         {
+            _log.LogWarning("TimeEntry create denied: actor {ActorId} cannot access worker {WorkerId}", actor.Id, workerId);
             return Forbid();
         }
 
-        // Дата работы: не ограничиваем будущим — план/факт может оформляться авансом.
-
-        // Парсим часы. Принимаем оба разделителя ('.' и ','), храним как decimal в БД.
+        // Парсим часы. Принимаем оба разделителя ('.' / ','), терпим лишние пробелы (включая NBSP)
+        // и подсказки вроде «8ч», «8h», «8 hr». Серверный парсер — источник истины, JS лишь подсказывает.
         decimal hours = 0m;
-        if (!string.IsNullOrWhiteSpace(Input.Hours))
+        var hoursParsed = TryParseHours(Input.Hours, out hours);
+        if (!hoursParsed)
         {
-            var raw = Input.Hours.Trim().Replace(',', '.');
-            if (!decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out hours)
-                || hours <= 0m || hours > 24m)
-            {
-                ModelState.AddModelError(nameof(Input.Hours),
-                    "Введите количество часов от 0.01 до 24 (например, 1.5 или 1,5).");
-            }
+            ModelState.AddModelError(nameof(Input.Hours),
+                "Введите количество часов от 0.01 до 24 (например, 1.5 или 1,5).");
         }
 
-        // Если CarName заполнено, либо LicensePlate тоже должен быть (см. validation.md).
-        if (!string.IsNullOrWhiteSpace(Input.CarName) ^ !string.IsNullOrWhiteSpace(Input.LicensePlate))
+        // XOR-валидации «авто+номер вместе или ничего» больше нет: разрешаем любое сочетание.
+        // - оба пусты → CarId = null;
+        // - только номер → используем его и как название (чтобы строка попала в справочник);
+        // - только название → сохраняем без номера;
+        // - оба есть → стандартный кейс.
+
+        if (!ModelState.IsValid)
         {
-            ModelState.AddModelError(string.Empty, "Заполните оба поля автомобиля или оставьте оба пустыми.");
+            _log.LogInformation(
+                "TimeEntry create: validation failed. HoursRaw='{HoursRaw}', CarName='{Car}', Plate='{Plate}', Errors={Errors}",
+                Input.Hours, Input.CarName, Input.LicensePlate,
+                string.Join("; ", ModelState
+                    .SelectMany(kv => kv.Value!.Errors.Select(e => $"{kv.Key}: {e.ErrorMessage}"))));
+            return Page();
         }
 
-        if (!ModelState.IsValid) return Page();
+        var plate = string.IsNullOrWhiteSpace(Input.LicensePlate) ? null : Input.LicensePlate!.Trim();
+        var carName = string.IsNullOrWhiteSpace(Input.CarName) ? null : Input.CarName!.Trim();
+        if (carName is null && plate is not null) carName = plate;
 
         Guid? carId = null;
-        if (!string.IsNullOrWhiteSpace(Input.CarName))
+        try
         {
-            var car = await _cars.GetOrCreateAsync(Input.CarName!, Input.LicensePlate, actor.Id);
-            carId = car.Id;
+            if (carName is not null)
+            {
+                var car = await _cars.GetOrCreateAsync(carName, plate, actor.Id);
+                carId = car.Id;
+            }
+
+            var entry = new TimeEntry
+            {
+                WorkerId = workerId,
+                WorkDate = Input.WorkDate == default ? DateOnly.FromDateTime(DateTime.Today) : Input.WorkDate,
+                Hours = hours,
+                TaskName = (Input.TaskName ?? string.Empty).Trim(),
+                CarId = carId,
+                LicensePlate = plate,
+                Description = Input.Description?.Trim(),
+                CreatedById = actor.Id,
+            };
+
+            _log.LogInformation(
+                "TimeEntry create: actor={ActorId} worker={WorkerId} date={Date} hours={Hours} car='{Car}' plate='{Plate}'",
+                actor.Id, workerId, entry.WorkDate, entry.Hours, carName, plate);
+
+            await _entries.CreateAsync(entry, actor.Id);
+
+            _log.LogInformation("TimeEntry create: success id={EntryId}", entry.Id);
+            TempData["StatusMessage"] = "Запись сохранена.";
+            return RedirectToPage("/TimeEntries/Index");
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex,
+                "TimeEntry create FAILED. actor={ActorId} worker={WorkerId} hours={Hours} carName='{Car}' plate='{Plate}'",
+                actor.Id, workerId, hours, carName, plate);
+            ModelState.AddModelError(string.Empty,
+                "Не получилось сохранить запись. Попробуйте ещё раз, а если повторится — сообщите мастеру.");
+            return Page();
+        }
+    }
+
+    /// <summary>
+    /// Мягкий парсер часов. Принимает '1.5', '1,5', '1 ч', '8h', '0.25hr', с NBSP и без.
+    /// Логика: вырезаем NBSP, нормализуем запятую в точку, оставляем только цифры и одну точку,
+    /// пытаемся распарсить как decimal в инвариантной культуре. Результат должен быть в (0; 24].
+    /// </summary>
+    internal static bool TryParseHours(string? raw, out decimal hours)
+    {
+        hours = 0m;
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+
+        // Запятая → точка; всё остальное (буквы, пробелы любого вида, лишние разделители) выкидываем в цикле ниже.
+        var normalized = raw.Replace(',', '.');
+
+        var sb = new StringBuilder(normalized.Length);
+        bool dotSeen = false;
+        foreach (var ch in normalized)
+        {
+            if (char.IsDigit(ch))
+            {
+                sb.Append(ch);
+            }
+            else if (ch == '.' && !dotSeen)
+            {
+                sb.Append(ch);
+                dotSeen = true;
+            }
+            // всё остальное (буквы «ч»/«h»/«hr», пробелы, лишние разделители) — игнорируем
         }
 
-        var entry = new TimeEntry
-        {
-            WorkerId = workerId,
-            WorkDate = Input.WorkDate == default ? DateOnly.FromDateTime(DateTime.Today) : Input.WorkDate,
-            Hours = hours,
-            TaskName = (Input.TaskName ?? string.Empty).Trim(),
-            CarId = carId,
-            LicensePlate = Input.LicensePlate?.Trim(),
-            Description = Input.Description?.Trim(),
-            CreatedById = actor.Id,
-        };
+        var clean = sb.ToString();
+        if (clean.Length == 0 || clean == ".") return false;
 
-        await _entries.CreateAsync(entry, actor.Id);
-        TempData["StatusMessage"] = "Запись сохранена.";
-        return RedirectToPage("/TimeEntries/Index");
+        if (!decimal.TryParse(clean, NumberStyles.Number, CultureInfo.InvariantCulture, out hours)) return false;
+        if (hours <= 0m || hours > 24m) return false;
+        return true;
     }
 
     private async Task LoadWorkers(AppUser actor)
