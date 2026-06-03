@@ -44,7 +44,7 @@ public class TimeEntriesApiController : ControllerBase
     public record CreateRequest(
         Guid? WorkerId,
         [Required] DateOnly WorkDate,
-        [Range(0.01, 24.0)] decimal Hours,
+        [Range(0.01, double.MaxValue, ErrorMessage = "Часы должны быть больше нуля")] decimal Hours,
         [Required, MaxLength(200)] string TaskName,
         [MaxLength(100)] string? CarName,
         [MaxLength(20)] string? LicensePlate,

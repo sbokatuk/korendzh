@@ -22,7 +22,7 @@ public partial class CreateEntryPage : ContentPage
         if (!decimal.TryParse(HoursEntry.Text?.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var hours)
             || hours <= 0 || hours > 24)
         {
-            ShowError("Введите часы — число от 0.25 до 24.");
+            ShowError("Введите часы — число больше нуля.");
             return;
         }
         if (string.IsNullOrWhiteSpace(TaskEntry.Text))

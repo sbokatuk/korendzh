@@ -41,7 +41,7 @@ public class EditModel : PageModel
         [Required, DataType(DataType.Date)]
         public DateOnly WorkDate { get; set; }
 
-        [Range(0.01, 24.0)]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Часы должны быть больше нуля")]
         public decimal Hours { get; set; }
 
         [Required, MaxLength(200)]

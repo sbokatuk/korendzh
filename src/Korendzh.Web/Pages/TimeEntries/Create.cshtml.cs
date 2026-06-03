@@ -112,7 +112,7 @@ public class CreateModel : PageModel
         if (!hoursParsed)
         {
             ModelState.AddModelError(nameof(Input.Hours),
-                "Введите количество часов от 0.01 до 24 (например, 1.5 или 1,5).");
+                "Введите количество часов больше нуля (например, 1.5 или 1,5). Верхнего предела нет.");
         }
 
         // XOR-валидации «авто+номер вместе или ничего» больше нет: разрешаем любое сочетание.
@@ -180,7 +180,7 @@ public class CreateModel : PageModel
     /// <summary>
     /// Мягкий парсер часов. Принимает '1.5', '1,5', '1 ч', '8h', '0.25hr', с NBSP и без.
     /// Логика: вырезаем NBSP, нормализуем запятую в точку, оставляем только цифры и одну точку,
-    /// пытаемся распарсить как decimal в инвариантной культуре. Результат должен быть в (0; 24].
+    /// пытаемся распарсить как decimal в инвариантной культуре. Результат должен быть > 0 (верхнего предела нет).
     /// </summary>
     internal static bool TryParseHours(string? raw, out decimal hours)
     {
@@ -210,7 +210,7 @@ public class CreateModel : PageModel
         if (clean.Length == 0 || clean == ".") return false;
 
         if (!decimal.TryParse(clean, NumberStyles.Number, CultureInfo.InvariantCulture, out hours)) return false;
-        if (hours <= 0m || hours > 24m) return false;
+        if (hours <= 0m) return false; // верхнего предела нет, см. docs/validation.md
         return true;
     }
 
