@@ -43,7 +43,7 @@
             <th>Дата</th>
             <th>Работник</th>
             <th>Часы</th>
-            <th>Задача</th>
+            <th>Описание</th>
             <th>Авто</th>
             <th>Госномер</th>
             <th></th>
@@ -60,7 +60,7 @@
                 <td>@e.WorkDate.ToString("yyyy-MM-dd")</td>
                 <td>@(Model.WorkerNames.GetValueOrDefault(e.WorkerId) ?? "—")</td>
                 <td>@e.Hours.ToString("0.##")</td>
-                <td>@e.TaskName</td>
+                <td>@(string.IsNullOrWhiteSpace(e.Description) ? "—" : e.Description)</td>
                 <td>@(Model.CarNames.GetValueOrDefault(e.CarId ?? Guid.Empty) ?? "—")</td>
                 <td>@(e.LicensePlate ?? "—")</td>
                 <td class="actions">

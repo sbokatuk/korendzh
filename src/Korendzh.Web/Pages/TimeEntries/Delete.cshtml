@@ -13,7 +13,7 @@ else
     <div class="card">
         <p>Дата: @Model.Entry.WorkDate.ToString("yyyy-MM-dd")<br/>
             Часы: @Model.Entry.Hours<br/>
-            Задача: @Model.Entry.TaskName</p>
+            Описание: @(string.IsNullOrWhiteSpace(Model.Entry.Description) ? "—" : Model.Entry.Description)</p>
         <form method="post">
             <input type="hidden" name="id" value="@Model.Entry.Id" />
             <button class="btn danger" type="submit">Удалить</button>

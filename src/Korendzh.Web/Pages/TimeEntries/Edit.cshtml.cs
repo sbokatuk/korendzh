@@ -48,10 +48,6 @@ public class EditModel : PageModel
         [Required(ErrorMessage = "Укажите количество часов")]
         public string Hours { get; set; } = string.Empty;
 
-        // [Required] снят — Create уже сохраняет без задачи, держим согласованно.
-        [MaxLength(200)]
-        public string? TaskName { get; set; }
-
         [MaxLength(100)]
         public string? CarName { get; set; }
 
@@ -85,7 +81,6 @@ public class EditModel : PageModel
             RowVersion = entry.RowVersion,
             WorkDate = entry.WorkDate,
             Hours = entry.Hours.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
-            TaskName = entry.TaskName,
             CarName = carName,
             LicensePlate = entry.LicensePlate,
             Description = entry.Description,
@@ -141,7 +136,8 @@ public class EditModel : PageModel
             WorkerId = entry.WorkerId,
             WorkDate = Input.WorkDate,
             Hours = hours,
-            TaskName = (Input.TaskName ?? string.Empty).Trim(),
+            // TaskName из UI убран — сохраняем существующее значение, чтобы не затирать у старых записей.
+            TaskName = entry.TaskName,
             CarId = carId,
             LicensePlate = plate,
             Description = Input.Description?.Trim(),

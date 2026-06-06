@@ -67,9 +67,6 @@ public class CreateModel : PageModel
         [Required(ErrorMessage = "Укажите количество часов")]
         public string Hours { get; set; } = string.Empty;
 
-        [MaxLength(200)]
-        public string? TaskName { get; set; }
-
         [MaxLength(100)]
         public string? CarName { get; set; }
 
@@ -149,7 +146,7 @@ public class CreateModel : PageModel
                 WorkerId = workerId,
                 WorkDate = Input.WorkDate == default ? DateOnly.FromDateTime(DateTime.Today) : Input.WorkDate,
                 Hours = hours,
-                TaskName = (Input.TaskName ?? string.Empty).Trim(),
+                TaskName = string.Empty,
                 CarId = carId,
                 LicensePlate = plate,
                 Description = Input.Description?.Trim(),
