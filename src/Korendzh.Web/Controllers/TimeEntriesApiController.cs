@@ -38,14 +38,14 @@ public class TimeEntriesApiController : ControllerBase
 
     public record TimeEntryDto(
         Guid Id, Guid WorkerId, DateOnly WorkDate, decimal Hours,
-        string TaskName, Guid? CarId, string? CarName, string? LicensePlate, string? Description,
+        string? TaskName, Guid? CarId, string? CarName, string? LicensePlate, string? Description,
         DateTime CreatedAt, DateTime? UpdatedAt);
 
     public record CreateRequest(
         Guid? WorkerId,
         [Required] DateOnly WorkDate,
         [Range(0.01, double.MaxValue, ErrorMessage = "Часы должны быть больше нуля")] decimal Hours,
-        [Required, MaxLength(200)] string TaskName,
+        [MaxLength(200)] string? TaskName,
         [MaxLength(100)] string? CarName,
         [MaxLength(20)] string? LicensePlate,
         [MaxLength(500)] string? Description);
@@ -117,7 +117,7 @@ public class TimeEntriesApiController : ControllerBase
             WorkerId = workerId,
             WorkDate = req.WorkDate,
             Hours = req.Hours,
-            TaskName = req.TaskName.Trim(),
+            TaskName = (req.TaskName ?? string.Empty).Trim(),
             CarId = carId,
             LicensePlate = req.LicensePlate?.Trim(),
             Description = req.Description?.Trim(),

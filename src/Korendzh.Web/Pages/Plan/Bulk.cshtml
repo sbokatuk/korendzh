@@ -49,7 +49,7 @@
         </div>
         <div class="field">
             <label asp-for="Input.HoursPerDay">Часов в день</label>
-            <input asp-for="Input.HoursPerDay" type="number" step="0.25" min="0.25" max="24" required />
+            <input asp-for="Input.HoursPerDay" type="text" inputmode="decimal" autocomplete="off" required placeholder="например, 8 или 12.5" />
         </div>
     </div>
 

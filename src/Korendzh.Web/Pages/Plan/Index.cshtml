@@ -49,7 +49,7 @@
                 <td class="muted">@day.Date.ToString("ddd", ru)</td>
                 <td>
                     <input type="hidden" name="Dates" value="@day.Date.ToString("yyyy-MM-dd")" />
-                    <input type="number" step="0.25" min="0" max="24" name="Hours"
+                    <input type="text" inputmode="decimal" autocomplete="off" name="Hours"
                            value="@(day.Hours > 0 ? day.Hours.ToString("0.##") : "")"
                            style="width:100px" />
                 </td>

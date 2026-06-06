@@ -41,11 +41,16 @@ public class EditModel : PageModel
         [Required, DataType(DataType.Date)]
         public DateOnly WorkDate { get; set; }
 
-        [Range(0.01, double.MaxValue, ErrorMessage = "Часы должны быть больше нуля")]
-        public decimal Hours { get; set; }
+        /// <summary>
+        /// Часы как string + ручной парсер (CreateModel.TryParseHours). Серверный парсер принимает
+        /// '1.5' / '1,5' / '8ч' / '8h' / NBSP. Источник истины — сервер, не браузер.
+        /// </summary>
+        [Required(ErrorMessage = "Укажите количество часов")]
+        public string Hours { get; set; } = string.Empty;
 
-        [Required, MaxLength(200)]
-        public string TaskName { get; set; } = string.Empty;
+        // [Required] снят — Create уже сохраняет без задачи, держим согласованно.
+        [MaxLength(200)]
+        public string? TaskName { get; set; }
 
         [MaxLength(100)]
         public string? CarName { get; set; }
@@ -79,7 +84,7 @@ public class EditModel : PageModel
             Id = entry.Id,
             RowVersion = entry.RowVersion,
             WorkDate = entry.WorkDate,
-            Hours = entry.Hours,
+            Hours = entry.Hours.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
             TaskName = entry.TaskName,
             CarName = carName,
             LicensePlate = entry.LicensePlate,
@@ -103,6 +108,13 @@ public class EditModel : PageModel
 
         // Дата работы не ограничена будущим — табель может оформляться авансом.
         // XOR-валидация «авто+номер вместе или ничего» убрана: разрешаем любое сочетание.
+        // Парсим часы тем же мягким парсером, что и Create — принимаем точку и запятую, режем буквы.
+        decimal hours = 0m;
+        if (!CreateModel.TryParseHours(Input.Hours, out hours))
+        {
+            ModelState.AddModelError(nameof(Input.Hours),
+                "Введите количество часов больше нуля (например, 1.5 или 1,5). Верхнего предела нет.");
+        }
 
         if (!ModelState.IsValid) return Page();
 
@@ -128,8 +140,8 @@ public class EditModel : PageModel
             Id = entry.Id,
             WorkerId = entry.WorkerId,
             WorkDate = Input.WorkDate,
-            Hours = Input.Hours,
-            TaskName = Input.TaskName.Trim(),
+            Hours = hours,
+            TaskName = (Input.TaskName ?? string.Empty).Trim(),
             CarId = carId,
             LicensePlate = plate,
             Description = Input.Description?.Trim(),

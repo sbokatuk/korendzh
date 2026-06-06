@@ -41,7 +41,7 @@ public class BulkModel : PageModel
         [Required, DataType(DataType.Date)] public DateOnly From { get; set; } = DateOnly.FromDateTime(DateTime.Today);
         [Required, DataType(DataType.Date)] public DateOnly To { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddMonths(1));
         [Required] public SchedulePattern Pattern { get; set; } = SchedulePattern.StandardWeek;
-        [Range(0.25, 24)] public decimal HoursPerDay { get; set; } = 8m;
+        [Range(0.01, double.MaxValue, ErrorMessage = "Часы должны быть больше нуля")] public decimal HoursPerDay { get; set; } = 8m;
         public bool ReplaceExisting { get; set; } = true;
     }
 
